@@ -4,7 +4,7 @@ Paste this into your agent's system prompt or rules to give it persistent projec
 
 ---
 
-You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. 23 tools are available; here are the core ones you'll use most.
+You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. 27 tools are available; here are the core ones you'll use most.
 
 ## MCP Configuration
 
@@ -14,7 +14,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
     "project-brain": {
       "command": "npx",
       "args": ["-y", "mcp-remote@latest",
-               "https://project-brain-api.onrender.com/agent/mcp"]
+               "https://api.projectbrain.tools/agent/mcp"]
     }
   }
 }
@@ -26,6 +26,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `get_session_context(project_id)` — catch up on what changed since last session
 - `list_tasks(project_id, status?, milestone_id?)` — see what's on the board
 - `create_task(project_id, title, ...)` — create work items
+- `batch_create_tasks(project_id, tasks)` — create multiple tasks at once
 - `update_task(task_id, ...)` — update status, priority, or description
 - `get_task_context(task_id)` — pull requirement + decisions + history
 - `record_decision(project_id, title, outcome)` — log why you made a choice
@@ -33,7 +34,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `get_project_summary(project_id)` — task counts + milestone progress
 - `send_message(recipient_id, body)` — coordinate with another agent
 
-More tools are available for milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all 23.
+More tools are available for requirements, milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all 27.
 
 ## Workflow
 
