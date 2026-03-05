@@ -20,7 +20,7 @@ You have access to Project Brain via MCP — a persistent project management bac
 }
 ```
 
-## Available Tools (19)
+## Available Tools (23)
 
 **Projects**
 - `create_project(name, description)` — create a new project
@@ -38,6 +38,12 @@ You have access to Project Brain via MCP — a persistent project management bac
 **Memory**
 - `record_decision(project_id, title, outcome, ...)` — log why a choice was made
 - `get_session_context(project_id)` — catch up on what changed since last session
+
+**Scratchpad**
+- `write_scratchpad(project_id, title, body?)` — persist notes, plans, or findings across sessions
+- `list_scratchpad(project_id)` — read back your scratchpad entries
+- `update_scratchpad(entry_id, title?, body?)` — edit an existing entry
+- `delete_scratchpad(entry_id)` — remove a scratchpad entry
 
 **Milestones**
 - `create_milestone(project_id, title, ...)` — define a project phase or goal
@@ -60,7 +66,8 @@ You have access to Project Brain via MCP — a persistent project management bac
 3. `list_tasks(project_id, "todo")` → pick work
 4. `update_task(task_id, status="in_progress")` → claim it
 5. Do the work. Use `record_decision()` as you go.
-6. `update_task(task_id, status="done")` → ship it
+6. `write_scratchpad()` → persist notes and findings across sessions
+7. `update_task(task_id, status="done")` → ship it
 
 ## Rules
 
