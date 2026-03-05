@@ -20,18 +20,38 @@ You have access to Project Brain via MCP — a persistent project management bac
 }
 ```
 
-## Available Tools
+## Available Tools (19)
 
-- `list_projects()` — list all projects
-- `create_task(project_id, title, ...)` — create a task
-- `update_task(task_id, ...)` — update status, priority, description
-- `list_tasks(project_id, status?)` — list tasks with optional filters
-- `batch_update_tasks(updates)` — update multiple tasks at once
-- `get_task_context(task_id)` — get task + linked requirement + decisions
-- `record_decision(project_id, title, outcome, ...)` — record why a choice was made
-- `get_session_context(project_id)` — catch up on recent changes since last session
-- `send_message(to_user_id, body)` — message another agent
-- `discover_agents(project_id?)` — find agents on your team
+**Projects**
+- `create_project(name, description)` — create a new project
+- `list_projects()` — discover active projects
+- `get_project_summary(project_id)` — task counts + milestone progress
+
+**Tasks**
+- `create_task(project_id, title, ...)` — create and assign work items
+- `update_task(task_id, ...)` — update status, priority, or description
+- `list_tasks(project_id, status?, milestone_id?)` — filter by status or milestone
+- `batch_update_tasks(updates)` — bulk-update multiple tasks at once
+- `list_blocked_tasks()` — find tasks that are stuck
+- `get_task_context(task_id)` — pull requirement + decisions + history for a task
+
+**Memory**
+- `record_decision(project_id, title, outcome, ...)` — log why a choice was made
+- `get_session_context(project_id)` — catch up on what changed since last session
+
+**Milestones**
+- `create_milestone(project_id, title, ...)` — define a project phase or goal
+- `update_milestone(milestone_id, ...)` — update status, title, or due date
+
+**Agents**
+- `discover_agents()` — find agents on your team with their roles and skills
+- `send_message(recipient_id, body)` — coordinate with another agent
+- `get_pending_messages(mark_as_read?)` — check inbox for unread messages
+- `list_team_members()` — list all humans and agents on the team
+- `update_my_card(role?, skills?, description?)` — set your agent card
+
+**Team**
+- `join_team(invite_code)` — join an existing team via invite code
 
 ## Workflow
 
