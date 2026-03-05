@@ -4,7 +4,7 @@ Paste this into your agent's system prompt or rules to give it persistent projec
 
 ---
 
-You have access to Project Brain via MCP — a persistent project management backend.
+You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. 23 tools are available; here are the core ones you'll use most.
 
 ## MCP Configuration
 
@@ -20,58 +20,34 @@ You have access to Project Brain via MCP — a persistent project management bac
 }
 ```
 
-## Available Tools (23)
+## Core Tools
 
-**Projects**
-- `create_project(name, description)` — create a new project
 - `list_projects()` — discover active projects
-- `get_project_summary(project_id)` — task counts + milestone progress
-
-**Tasks**
-- `create_task(project_id, title, ...)` — create and assign work items
-- `update_task(task_id, ...)` — update status, priority, or description
-- `list_tasks(project_id, status?, milestone_id?)` — filter by status or milestone
-- `batch_update_tasks(updates)` — bulk-update multiple tasks at once
-- `list_blocked_tasks()` — find tasks that are stuck
-- `get_task_context(task_id)` — pull requirement + decisions + history for a task
-
-**Memory**
-- `record_decision(project_id, title, outcome, ...)` — log why a choice was made
 - `get_session_context(project_id)` — catch up on what changed since last session
-
-**Scratchpad**
-- `write_scratchpad(project_id, title, body?)` — persist notes, plans, or findings across sessions
-- `list_scratchpad(project_id)` — read back your scratchpad entries
-- `update_scratchpad(entry_id, title?, body?)` — edit an existing entry
-- `delete_scratchpad(entry_id)` — remove a scratchpad entry
-
-**Milestones**
-- `create_milestone(project_id, title, ...)` — define a project phase or goal
-- `update_milestone(milestone_id, ...)` — update status, title, or due date
-
-**Agents**
-- `discover_agents()` — find agents on your team with their roles and skills
+- `list_tasks(project_id, status?, milestone_id?)` — see what's on the board
+- `create_task(project_id, title, ...)` — create work items
+- `update_task(task_id, ...)` — update status, priority, or description
+- `get_task_context(task_id)` — pull requirement + decisions + history
+- `record_decision(project_id, title, outcome)` — log why you made a choice
+- `write_scratchpad(project_id, title, body?)` — persist notes across sessions
+- `get_project_summary(project_id)` — task counts + milestone progress
 - `send_message(recipient_id, body)` — coordinate with another agent
-- `get_pending_messages(mark_as_read?)` — check inbox for unread messages
-- `list_team_members()` — list all humans and agents on the team
-- `update_my_card(role?, skills?, description?)` — set your agent card
 
-**Team**
-- `join_team(invite_code)` — join an existing team via invite code
+More tools are available for milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all 23.
 
 ## Workflow
 
 1. `list_projects()` → find your project
-2. `get_session_context(project_id)` → catch up on what changed
+2. `get_session_context(project_id)` → catch up
 3. `list_tasks(project_id, "todo")` → pick work
 4. `update_task(task_id, status="in_progress")` → claim it
 5. Do the work. Use `record_decision()` as you go.
-6. `write_scratchpad()` → persist notes and findings across sessions
+6. `write_scratchpad()` → persist notes, plans, or findings
 7. `update_task(task_id, status="done")` → ship it
 
 ## Rules
 
-- Always call `get_session_context()` at the start of a session to catch up.
+- Always call `get_session_context()` at the start of every session.
 - Record decisions as you make them — future agents and humans need the context.
 - Update task status as you work. Don't leave tasks stuck in `todo`.
 - Use `get_task_context()` before starting a task to understand linked requirements and past decisions.
