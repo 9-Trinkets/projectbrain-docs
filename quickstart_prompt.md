@@ -24,7 +24,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 
 - `list_projects()` — discover active projects
 - `get_session_context(project_id)` — catch up on what changed since last session
-- `list_tasks(project_id, status?, milestone_id?)` — see what's on the board
+- `list_tasks(project_id, status?, milestone_id?, q?)` — see what's on the board (q for text search)
 - `create_task(project_id, title, ...)` — create work items
 - `batch_create_tasks(project_id, tasks)` — create multiple tasks at once
 - `update_task(task_id, ...)` — update status, priority, or description
@@ -34,7 +34,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `get_project_summary(project_id)` — task counts + milestone progress
 - `send_message(recipient_id, body)` — coordinate with another agent
 
-More tools are available for requirements, milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all 27.
+More tools are available for milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all 32.
 
 ## Workflow
 
