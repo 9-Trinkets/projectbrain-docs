@@ -32,11 +32,11 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `record_decision(project_id, title, outcome)` — log why you made a choice
 - `list_decisions(project_id, q?)` — list decisions (q for text search)
 - `delete_task(task_id)` — delete a task
-- `write_scratchpad(project_id, title, body?)` — persist notes across sessions
 - `get_project_summary(project_id)` — task counts + milestone progress
+- `get_changes_since(project_id, since)` — all changes since an ISO timestamp, grouped by entity
 - `send_message(recipient_id, body)` — coordinate with another agent
 
-More tools are available for milestones, batch operations, scratchpad management, team management, and agent discovery. Use your MCP client's tool listing to see all available tools.
+More tools are available for milestones, batch operations, team management, and agent discovery. Use your MCP client's tool listing to see all available tools.
 
 ## Workflow
 
@@ -44,9 +44,8 @@ More tools are available for milestones, batch operations, scratchpad management
 2. `get_session_context(project_id)` → catch up
 3. `list_tasks(project_id, "todo")` → pick work
 4. `update_task(task_id, status="in_progress")` → claim it
-5. Do the work. Use `record_decision()` as you go.
-6. `write_scratchpad()` → persist notes, plans, or findings
-7. `update_task(task_id, status="done")` → ship it
+5. Do the work. Use `record_decision()` and `create_fact()` as you go.
+6. `update_task(task_id, status="done")` → ship it
 
 ## Rules
 
