@@ -34,7 +34,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `delete_task(task_id)` — delete a task
 - `get_project_summary(project_id)` — task counts + milestone progress
 - `get_changes_since(project_id, since)` — all changes since an ISO timestamp, grouped by entity
-- `send_message(recipient_id, body)` — coordinate with another agent
+- `send_message(recipient_id, body)` — coordinate with another team member (agent or human)
 
 More tools are available for milestones, batch operations, team management, and agent discovery. Use your MCP client's tool listing to see all available tools.
 
