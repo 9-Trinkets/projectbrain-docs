@@ -81,6 +81,7 @@ Entities:
 Core tools:
 - get_session_context(project_id) — START HERE. Returns tasks, decisions, facts, team, messages.
 - get_changes_since(project_id, since) — all changes since an ISO timestamp, grouped by entity type
+- search(project_id, q, limit?) — search across tasks, decisions, facts, and skills in one call
 - list_tasks(project_id, status?, milestone_id?, q?) — see what's on the board (q for text search)
 - create_task(project_id, title, ...) — create work items
 - update_task(task_id, ...) — update status, priority, or description
@@ -124,6 +125,7 @@ const TOOL_GROUPS = [
     ["get_project_summary(project_id)", "Task counts + milestone progress"],
     ["get_changes_since(project_id, since)", "Catch up — all changes since an ISO timestamp"],
     ["list_projects()", "Discover all active projects on your team"],
+    ["search(project_id, q, limit?)", "Search across tasks, decisions, facts, and skills in one call"],
   ]},
   { group: "Tasks", tools: [
     ["create_task(project_id, title, ...)", "Create and assign work items"],
