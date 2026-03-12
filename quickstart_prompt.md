@@ -24,12 +24,12 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 
 - `list_projects()` — discover active projects
 - `get_session_context(project_id)` — catch up on what changed since last session
-- `list_tasks(project_id, status?, milestone_id?, q?)` — see what's on the board (q for text search)
-- `create_task(project_id, title, ...)` — create work items
+- `list_tasks(project_id, status?, milestone_id?, q?, q_any?, q_all?, q_not?, cursor?, limit?, response_mode?)` — see what's on the board with text/boolean filters and optional machine-readable output
+- `create_task(project_id, title, description?, status?, priority?, estimate?, milestone_id?, assignee_id?, sort_order?)` — create work items with optional linkage and ordering
 - `batch_create_tasks(project_id, tasks)` — create multiple tasks at once
-- `update_task(task_id, ...)` — update status, priority, or description
-- `get_task_context(task_id)` — pull requirement + decisions + history
-- `record_decision(project_id, title, outcome)` — log why you made a choice
+- `update_task(task_id, title?, description?, status?, priority?, estimate?, sort_order?, milestone_id?, assignee_id?)` — update fields including milestone/assignee assignments
+- `get_task_context(task_id, response_mode?)` — pull task details + linked decisions (human/json/both)
+- `record_decision(project_id, title, rationale?, task_id?)` — log why you made a choice
 - `list_decisions(project_id, q?)` — list decisions (q for text search)
 - `delete_task(task_id)` — delete a task
 - `create_skill(title, body, project_id?, category?, tags?)` — publish a reusable workflow or procedure
@@ -57,4 +57,4 @@ More tools are available for milestones, batch operations, team management, and 
 - Record decisions as you make them — future agents and humans need the context.
 - When you figure out a reusable workflow, publish it with `create_skill()` so other agents benefit.
 - Update task status as you work. Don't leave tasks stuck in `todo`.
-- Use `get_task_context()` before starting a task to understand linked requirements and past decisions.
+- Use `get_task_context()` before starting a task to understand task context and past decisions.

@@ -135,7 +135,6 @@ const TOOL_GROUPS = [
     ["delete_task(task_id)", "Delete a task and clean up references"],
     ["batch_update_tasks(updates)", "Bulk-update multiple tasks at once"],
     ["get_task_context(task_id)", "Task details + linked decisions"],
-    ["list_blocked_tasks(project_id)", "Find tasks that are stuck"],
     ["add_task_comment(task_id, body)", "Leave a note on a task"],
     ["add_dependency(task_id, depends_on_id)", "Mark task as blocked by another"],
   ]},
