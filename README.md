@@ -6,6 +6,7 @@ The docs app is intended to be published as a standalone public repository (via 
 ## Scope
 - In scope: product docs, setup guides, API/MCP usage docs, technical explainers.
 - Out of scope: private app backend/frontend source code, internal infrastructure, and secrets.
+- Internal prompts, delivery plans, and strategy notes must live outside `docs/` (for example in `internal_docs/`) so they are excluded from public subtree publishing.
 
 ## Local development
 Requirements:
