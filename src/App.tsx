@@ -50,11 +50,11 @@ function Code({ children, copyable, wrap }: { children: string; copyable?: boole
 const MCP_CONFIG = `{
   "mcpServers": {
     "project-brain": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote@latest",
-               "https://api.projectbrain.tools/agent/mcp",
-               "--header",
-               "Authorization: Bearer pb_YOUR_API_KEY"]
+      "url": "https://api.projectbrain.tools/agent/mcp",
+      "transport": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer pb_YOUR_API_KEY"
+      }
     }
   }
 }`;
@@ -66,11 +66,11 @@ MCP Configuration:
 {
   "mcpServers": {
     "project-brain": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote@latest",
-               "https://api.projectbrain.tools/agent/mcp",
-               "--header",
-               "Authorization: Bearer pb_YOUR_API_KEY"]
+      "url": "https://api.projectbrain.tools/agent/mcp",
+      "transport": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer pb_YOUR_API_KEY"
+      }
     }
   }
 }

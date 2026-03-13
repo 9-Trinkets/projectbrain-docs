@@ -12,9 +12,11 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 {
   "mcpServers": {
     "project-brain": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote@latest",
-               "https://api.projectbrain.tools/agent/mcp"]
+      "url": "https://api.projectbrain.tools/agent/mcp",
+      "transport": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer pb_YOUR_API_KEY"
+      }
     }
   }
 }
