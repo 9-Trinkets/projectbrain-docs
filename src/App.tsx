@@ -32,7 +32,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 /* ── Code block ── */
-function Code({ children, copyable }: { children: string; copyable?: boolean }) {
+function Code({ children, copyable, wrap }: { children: string; copyable?: boolean; wrap?: boolean }) {
   return (
     <div className="rounded-lg bg-gray-950 font-mono text-sm leading-relaxed text-gray-300">
       {copyable && (
@@ -40,7 +40,7 @@ function Code({ children, copyable }: { children: string; copyable?: boolean }) 
           <CopyButton text={children} />
         </div>
       )}
-      <pre className="overflow-x-auto whitespace-pre p-4">{children}</pre>
+      <pre className={`overflow-x-auto p-4 ${wrap ? "whitespace-pre-wrap break-words" : "whitespace-pre"}`}>{children}</pre>
     </div>
   );
 }
@@ -94,7 +94,7 @@ Core tools:
 - delete_task(task_id) — delete a task (cleans up deps + decision links)
 - create_fact(project_id, title, body?, category?) — record a convention/constraint/context
 - list_facts(project_id, q?) — read project facts (q for text search)
-- create_skill(title, body, project_id?, category?, tags?) — publish a reusable workflow or procedure
+- create_skill(title, body, ...) — publish a reusable workflow or procedure
 - list_skills(project_id?, category?, q?) — discover skills (returns project + team-wide)
 - get_skill(skill_id) — read full skill content before following it
 - send_message(recipient_id, body) — coordinate with another team member (agent or human)
@@ -134,7 +134,7 @@ const TOOL_GROUPS = [
     ["create_task(project_id, title, ...)", "Create and assign work items"],
     ["batch_create_tasks(project_id, tasks)", "Create multiple tasks in one call"],
     ["update_task(task_id, ...)", "Update status, priority, or description"],
-    ["list_tasks(project_id, ..., response_mode?)", "Filter by status/milestone/text; supports q_any/q_all/q_not (OR/AND/NOT)"],
+    ["list_tasks(project_id, ..., response_mode?)", "Filter by status, milestone, or text"],
     ["delete_task(task_id)", "Delete a task and clean up references"],
     ["batch_update_tasks(updates)", "Bulk-update multiple tasks at once"],
     ["get_task_context(task_id)", "Task details + linked decisions"],
@@ -151,7 +151,7 @@ const TOOL_GROUPS = [
     ["list_facts(project_id, q?)", "Search and read durable project knowledge"],
   ]},
   { group: "Skills", tools: [
-    ["create_skill(title, body, project_id?, category?, tags?)", "Publish a reusable workflow or procedure"],
+    ["create_skill(title, body, ...)", "Publish a reusable workflow or procedure"],
     ["list_skills(project_id?, category?, q?)", "Discover skills by project, category, or search"],
     ["get_skill(skill_id)", "Read full skill content before following it"],
     ["update_skill(skill_id, ...)", "Update a skill's content or tags"],
@@ -235,6 +235,13 @@ const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
     { name: "description", optional: true, description: "Updated description." },
     { name: "due_date", optional: true, description: "Updated due date (YYYY-MM-DD)." },
     { name: "status", optional: true, description: "Updated milestone status." },
+  ],
+  "create_skill(title, body, ...)": [
+    { name: "title", description: "Skill title." },
+    { name: "body", description: "Skill content/body." },
+    { name: "project_id", optional: true, description: "Scope to a project UUID (omit for team-wide skill)." },
+    { name: "category", optional: true, description: "Optional skill category." },
+    { name: "tags", optional: true, description: "Optional tag list." },
   ],
   "update_project(project_id, ...)": [
     { name: "project_id", description: "UUID of the project to update." },
@@ -563,7 +570,7 @@ export default function App() {
               how to use Project Brain — entities, tools, workflow, and conventions.
             </p>
             <div className="mt-8">
-              <Code copyable>{SYSTEM_PROMPT}</Code>
+              <Code copyable wrap>{SYSTEM_PROMPT}</Code>
             </div>
           </section>
 
