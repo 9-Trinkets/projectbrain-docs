@@ -85,7 +85,7 @@ Core tools:
 - get_session_context(project_id) — START HERE. Returns tasks, decisions, facts, team, messages.
 - get_changes_since(project_id, since) — all changes since an ISO timestamp, grouped by entity type
 - search(project_id, q, limit?) — search across tasks, decisions, facts, and skills in one call
-- list_tasks(project_id, ..., response_mode?) — board view with status/milestone/text filters (including q_any/q_all/q_not) and selectable response format (human/json/both)
+- list_tasks(project_id, ..., response_mode?) — list tasks with filters and selectable response format (human/json/both)
 - create_task(project_id, title, ...) — create work items
 - update_task(task_id, ...) — update status, priority, or description
 - get_task_context(task_id) — task details + linked decisions
@@ -174,15 +174,124 @@ const TOOL_GROUPS = [
     ["join_team(invite_code)", "Join an existing team via invite code"],
   ]},
 ];
+type ToolParam = {
+  name: string;
+  optional?: boolean;
+  description: string;
+};
+
+const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
+  "create_task(project_id, title, ...)": [
+    { name: "project_id", description: "UUID of the target project." },
+    { name: "title", description: "Task title." },
+    { name: "description", optional: true, description: "Task description text." },
+    { name: "status", optional: true, description: "Initial status (for example: todo, in_progress, blocked, done)." },
+    { name: "priority", optional: true, description: "Priority label (for example: high, medium, low)." },
+    { name: "estimate", optional: true, description: "Optional estimate (hours)." },
+    { name: "milestone_id", optional: true, description: "Milestone UUID to attach this task to." },
+    { name: "assignee_id", optional: true, description: "Assignee UUID (agent or human)." },
+    { name: "sort_order", optional: true, description: "Optional explicit ordering index." },
+  ],
+  "update_task(task_id, ...)": [
+    { name: "task_id", description: "UUID of the task to update." },
+    { name: "title", optional: true, description: "Updated task title." },
+    { name: "description", optional: true, description: "Updated task description." },
+    { name: "status", optional: true, description: "Updated status." },
+    { name: "priority", optional: true, description: "Updated priority." },
+    { name: "estimate", optional: true, description: "Updated estimate." },
+    { name: "sort_order", optional: true, description: "Updated ordering index." },
+    { name: "milestone_id", optional: true, description: "Updated milestone UUID (or empty to clear)." },
+    { name: "assignee_id", optional: true, description: "Updated assignee UUID (or empty to clear)." },
+  ],
+  "list_tasks(project_id, ..., response_mode?)": [
+    { name: "project_id", description: "UUID of the project to query." },
+    { name: "status", optional: true, description: "Filter by task status (for example: todo, in_progress, blocked, done)." },
+    { name: "milestone_id", optional: true, description: "Filter tasks by milestone UUID." },
+    { name: "q", optional: true, description: "Single text filter on title/description." },
+    { name: "q_any", optional: true, description: "OR terms: task matches if any term matches title/description." },
+    { name: "q_all", optional: true, description: "AND terms: task must match every term." },
+    { name: "q_not", optional: true, description: "NOT terms: exclude tasks matching any listed term." },
+    { name: "cursor", optional: true, description: "Pagination cursor from a previous response." },
+    { name: "limit", optional: true, description: "Max items to return (default 50, max 100)." },
+    { name: "response_mode", optional: true, description: "Output format: human, json, or both." },
+  ],
+  "update_skill(skill_id, ...)": [
+    { name: "skill_id", description: "UUID of the skill to update." },
+    { name: "title", optional: true, description: "Updated skill title." },
+    { name: "body", optional: true, description: "Updated skill content/body." },
+    { name: "category", optional: true, description: "Updated category." },
+    { name: "tags", optional: true, description: "Updated tag list." },
+  ],
+  "create_milestone(project_id, title, ...)": [
+    { name: "project_id", description: "UUID of the project." },
+    { name: "title", description: "Milestone title." },
+    { name: "description", optional: true, description: "Milestone description." },
+    { name: "due_date", optional: true, description: "Due date (YYYY-MM-DD)." },
+    { name: "status", optional: true, description: "Milestone status (planned, in_progress, completed, cancelled)." },
+  ],
+  "update_milestone(milestone_id, ...)": [
+    { name: "milestone_id", description: "UUID of the milestone to update." },
+    { name: "title", optional: true, description: "Updated title." },
+    { name: "description", optional: true, description: "Updated description." },
+    { name: "due_date", optional: true, description: "Updated due date (YYYY-MM-DD)." },
+    { name: "status", optional: true, description: "Updated milestone status." },
+  ],
+  "update_project(project_id, ...)": [
+    { name: "project_id", description: "UUID of the project to update." },
+    { name: "name", optional: true, description: "Updated project name." },
+    { name: "description", optional: true, description: "Updated project description." },
+  ],
+};
+
+function extractToolParams(tool: string): Omit<ToolParam, "description">[] {
+  const open = tool.indexOf("(");
+  const close = tool.lastIndexOf(")");
+  if (open === -1 || close === -1 || close <= open) {
+    return [];
+  }
+
+  const inner = tool.slice(open + 1, close).trim();
+  if (!inner) {
+    return [];
+  }
+
+  return inner
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && part !== "...")
+    .map((part) => {
+      const withoutDefault = part.replace(/=.*/, "").trim();
+      const optional = withoutDefault.endsWith("?");
+      const name = withoutDefault.replace(/\?$/, "");
+      return { name, optional };
+    });
+}
+
+function resolveToolParams(tool: string): ToolParam[] {
+  const override = TOOL_PARAM_DETAILS_OVERRIDES[tool];
+  if (override) {
+    return override;
+  }
+
+  return extractToolParams(tool).map((param) => ({
+    ...param,
+    description: "See MCP schema for accepted values and constraints.",
+  }));
+}
 
 export default function App() {
   const [active, setActive] = useState<string>("getting-started");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [expandedToolParams, setExpandedToolParams] = useState<Record<string, boolean>>({});
 
   const scrollTo = (id: string) => {
     setActive(id);
     setMobileNavOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const toggleToolParams = (tool: string) => {
+    setExpandedToolParams((prev) => ({ ...prev, [tool]: !prev[tool] }));
   };
 
   return (
@@ -328,12 +437,45 @@ export default function App() {
                 <div key={group}>
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">{group}</h3>
                   <div className="space-y-2">
-                    {tools.map(([tool, desc]) => (
-                      <div key={tool} className="flex flex-col gap-1 rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-                        <code className="shrink-0 font-mono text-sm text-accent-light">{tool}</code>
-                        <span className="text-sm text-gray-500">{desc}</span>
-                      </div>
-                    ))}
+                    {tools.map(([tool, desc]) => {
+                      const params = resolveToolParams(tool);
+                      const isExpanded = !!expandedToolParams[tool];
+                      const hasParams = params.length > 0;
+
+                      return (
+                        <div key={tool} className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+                            <code className="font-mono text-sm text-accent-light break-words">{tool}</code>
+                            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <span className="text-sm text-gray-500">{desc}</span>
+                              {hasParams && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleToolParams(tool)}
+                                  className="w-fit rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 transition hover:border-accent hover:text-white"
+                                >
+                                  {isExpanded ? "Hide params" : "Show params"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {hasParams && isExpanded && (
+                            <div className="mt-3 rounded-md border border-gray-800/80 bg-gray-950/50 p-3">
+                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Parameters</p>
+                              <ul className="space-y-1 text-sm text-gray-400">
+                                {params.map((param) => (
+                                  <li key={param.name}>
+                                    <code className="text-gray-300">{param.name}{param.optional ? "?" : ""}</code>
+                                    {" — "}
+                                    {param.description}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
