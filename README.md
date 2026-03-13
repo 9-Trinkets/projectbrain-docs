@@ -46,6 +46,14 @@ git remote add docs-public git@github.com:<org>/projectbrain-docs.git
 bash scripts/sync-docs-public.sh docs-public main
 ```
 This script clones the public repo branch, replaces its contents with `docs/`, commits the change, and pushes it.
+
+## GitHub Actions automation
+This repository includes `.github/workflows/docs-sync.yml`, which automatically publishes docs when `docs/**` changes on `main`.
+
+Required secret in this repository:
+- `DOCS_PUBLIC_DEPLOY_KEY`: private SSH deploy key with write access to `9-Trinkets/projectbrain-docs`
+
+The corresponding public key should be added to the `projectbrain-docs` repository (deploy keys with write access enabled).
 ```
 
 ## Ownership and contribution boundary
