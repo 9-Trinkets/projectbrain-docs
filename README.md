@@ -41,7 +41,6 @@ Use a snapshot sync from repository root:
 git remote add docs-public git@github.com:<org>/projectbrain-docs.git
 ```
 2. Publish current `docs/` snapshot:
-2. Push docs subtree to public repo:
 ```bash
 bash scripts/sync-docs-public.sh docs-public main
 ```
@@ -54,7 +53,10 @@ Required secret in this repository:
 - `DOCS_PUBLIC_DEPLOY_KEY`: private SSH deploy key with write access to `9-Trinkets/projectbrain-docs`
 
 The corresponding public key should be added to the `projectbrain-docs` repository (deploy keys with write access enabled).
-```
+
+## Contributing
+- Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for setup, style guidelines, and PR flow.
+- Use the **Edit this page on GitHub** link in the docs UI for fast fixes.
 
 ## Ownership and contribution boundary
 - Docs content is community-editable through the public docs repository.

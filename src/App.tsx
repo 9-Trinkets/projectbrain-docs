@@ -2,6 +2,9 @@ import { useState } from "react";
 
 const APP_URL = "https://app.projectbrain.tools";
 const MARKETING_URL = "https://projectbrain.tools";
+const DOCS_REPO_URL = "https://github.com/9-Trinkets/projectbrain-docs";
+const EDIT_THIS_PAGE_URL = `${DOCS_REPO_URL}/edit/main/src/App.tsx`;
+const CONTRIBUTING_URL = `${DOCS_REPO_URL}/blob/main/CONTRIBUTING.md`;
 
 const SECTIONS = [
   { id: "getting-started", label: "Getting Started" },
@@ -192,6 +195,8 @@ export default function App() {
             Docs
           </a>
           <div className="flex items-center gap-4">
+            <a href={EDIT_THIS_PAGE_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Edit this page</a>
+            <a href={CONTRIBUTING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Contributing</a>
             <a href={APP_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Open App</a>
             <a href={MARKETING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Home</a>
             {/* Mobile menu toggle */}
@@ -247,6 +252,8 @@ export default function App() {
                 </button>
               ))}
               <div className="mt-3 flex gap-3 border-t border-gray-800 pt-3">
+                <a href={EDIT_THIS_PAGE_URL} className="text-sm text-gray-400 hover:text-white">Edit this page</a>
+                <a href={CONTRIBUTING_URL} className="text-sm text-gray-400 hover:text-white">Contributing</a>
                 <a href={APP_URL} className="text-sm text-gray-400 hover:text-white">Open App</a>
                 <a href={MARKETING_URL} className="text-sm text-gray-400 hover:text-white">Home</a>
               </div>
@@ -260,6 +267,9 @@ export default function App() {
           {/* ── Getting Started ── */}
           <section id="getting-started" className="mb-16">
             <h1 className="font-mono text-3xl font-bold text-white">Getting Started</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
             <p className="mt-4 text-gray-400">
               Connect your AI agent to Project Brain in under a minute. You&apos;ll need a free account and an API key.
             </p>
@@ -305,6 +315,9 @@ export default function App() {
           {/* ── Tools Reference ── */}
           <section id="tools" className="mb-16">
             <h1 className="font-mono text-3xl font-bold text-white">MCP Tools Reference</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
             <p className="mt-4 text-gray-400">
               All tools available to your agent via MCP, grouped by category.
               Use your MCP client&apos;s tool listing to see the full schema for each.
@@ -330,6 +343,9 @@ export default function App() {
           {/* ── Workflow ── */}
           <section id="workflow" className="mb-16">
             <h1 className="font-mono text-3xl font-bold text-white">Agent Workflow</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
             <p className="mt-4 text-gray-400">
               The recommended workflow for agents using Project Brain. Follow these steps every session.
             </p>
@@ -397,6 +413,9 @@ export default function App() {
           {/* ── System Prompt ── */}
           <section id="system-prompt" className="mb-16">
             <h1 className="font-mono text-3xl font-bold text-white">System Prompt</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
             <p className="mt-4 text-gray-400">
               Copy this into your agent&apos;s system prompt or rules file. It gives the agent full context on
               how to use Project Brain — entities, tools, workflow, and conventions.
@@ -417,6 +436,8 @@ export default function App() {
             Project Brain Docs
           </span>
           <div className="flex gap-6">
+            <a href={EDIT_THIS_PAGE_URL} className="hover:text-gray-300">Edit this page</a>
+            <a href={CONTRIBUTING_URL} className="hover:text-gray-300">Contributing</a>
             <a href={MARKETING_URL} className="hover:text-gray-300">Home</a>
             <a href={APP_URL} className="hover:text-gray-300">App</a>
           </div>
