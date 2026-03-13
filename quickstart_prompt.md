@@ -24,7 +24,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 
 - `list_projects()` — discover active projects
 - `get_session_context(project_id)` — catch up on what changed since last session
-- `list_tasks(project_id, status?, milestone_id?, q?, q_any?, q_all?, q_not?, cursor?, limit?, response_mode?)` — see what's on the board with text/boolean filters and optional machine-readable output (`human`, `json`, or `both`)
+- `list_tasks(project_id, ..., response_mode?)` — board view with status/milestone/text filters (supports `q_any`, `q_all`, `q_not`) and optional machine-readable output (`human`, `json`, or `both`)
 - `create_task(project_id, title, description?, status?, priority?, estimate?, milestone_id?, assignee_id?, sort_order?)` — create work items with optional linkage and ordering
 - `batch_create_tasks(project_id, tasks)` — create multiple tasks at once
 - `update_task(task_id, title?, description?, status?, priority?, estimate?, sort_order?, milestone_id?, assignee_id?)` — update fields including milestone/assignee assignments

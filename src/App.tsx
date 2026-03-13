@@ -85,7 +85,7 @@ Core tools:
 - get_session_context(project_id) — START HERE. Returns tasks, decisions, facts, team, messages.
 - get_changes_since(project_id, since) — all changes since an ISO timestamp, grouped by entity type
 - search(project_id, q, limit?) — search across tasks, decisions, facts, and skills in one call
-- list_tasks(project_id, status?, milestone_id?, q?, q_any?, q_all?, q_not?, cursor?, limit?, response_mode?) — see what's on the board with structured text filters and selectable response format (human/json/both)
+- list_tasks(project_id, ..., response_mode?) — board view with status/milestone/text filters (including q_any/q_all/q_not) and selectable response format (human/json/both)
 - create_task(project_id, title, ...) — create work items
 - update_task(task_id, ...) — update status, priority, or description
 - get_task_context(task_id) — task details + linked decisions
@@ -134,7 +134,7 @@ const TOOL_GROUPS = [
     ["create_task(project_id, title, ...)", "Create and assign work items"],
     ["batch_create_tasks(project_id, tasks)", "Create multiple tasks in one call"],
     ["update_task(task_id, ...)", "Update status, priority, or description"],
-    ["list_tasks(project_id, status?, milestone_id?, q?, q_any?, q_all?, q_not?, cursor?, limit?, response_mode?)", "Filter by status/milestone with OR/AND/NOT text filters and response format control"],
+    ["list_tasks(project_id, ..., response_mode?)", "Filter by status/milestone/text; supports q_any/q_all/q_not (OR/AND/NOT)"],
     ["delete_task(task_id)", "Delete a task and clean up references"],
     ["batch_update_tasks(updates)", "Bulk-update multiple tasks at once"],
     ["get_task_context(task_id)", "Task details + linked decisions"],
