@@ -2,6 +2,7 @@ import { useState } from "react";
 
 const APP_URL = "https://app.projectbrain.tools";
 const MARKETING_URL = "https://projectbrain.tools";
+const BLOG_URL = "https://blog.projectbrain.tools";
 const DOCS_REPO_URL = "https://github.com/9-Trinkets/projectbrain-docs";
 const EDIT_THIS_PAGE_URL = `${DOCS_REPO_URL}/edit/main/src/App.tsx`;
 const CONTRIBUTING_URL = `${DOCS_REPO_URL}/blob/main/CONTRIBUTING.md`;
@@ -313,6 +314,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             <a href={EDIT_THIS_PAGE_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Edit this page</a>
             <a href={CONTRIBUTING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Contributing</a>
+            <a href={BLOG_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Blog</a>
             <a href={APP_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Open App</a>
             <a href={MARKETING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Home</a>
             {/* Mobile menu toggle */}
@@ -370,6 +372,7 @@ export default function App() {
               <div className="mt-3 flex gap-3 border-t border-gray-800 pt-3">
                 <a href={EDIT_THIS_PAGE_URL} className="text-sm text-gray-400 hover:text-white">Edit this page</a>
                 <a href={CONTRIBUTING_URL} className="text-sm text-gray-400 hover:text-white">Contributing</a>
+                <a href={BLOG_URL} className="text-sm text-gray-400 hover:text-white">Blog</a>
                 <a href={APP_URL} className="text-sm text-gray-400 hover:text-white">Open App</a>
                 <a href={MARKETING_URL} className="text-sm text-gray-400 hover:text-white">Home</a>
               </div>
@@ -587,6 +590,7 @@ export default function App() {
           <div className="flex gap-6">
             <a href={EDIT_THIS_PAGE_URL} className="hover:text-gray-300">Edit this page</a>
             <a href={CONTRIBUTING_URL} className="hover:text-gray-300">Contributing</a>
+            <a href={BLOG_URL} className="hover:text-gray-300">Blog</a>
             <a href={MARKETING_URL} className="hover:text-gray-300">Home</a>
             <a href={APP_URL} className="hover:text-gray-300">App</a>
           </div>
