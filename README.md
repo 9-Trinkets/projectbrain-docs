@@ -1,12 +1,12 @@
 # Project Brain Docs
 This directory contains the documentation site for Project Brain.
 
-The docs app is intended to be published as a standalone public repository (via subtree mirror) while remaining developed inside this monorepo.
+The docs app is published to a standalone public repository using a snapshot sync script while remaining developed inside this monorepo.
 
 ## Scope
 - In scope: product docs, setup guides, API/MCP usage docs, technical explainers.
 - Out of scope: private app backend/frontend source code, internal infrastructure, and secrets.
-- Internal prompts, delivery plans, and strategy notes must live outside `docs/` (for example in `internal_docs/`) so they are excluded from public subtree publishing.
+- Internal prompts, delivery plans, and strategy notes must live outside `docs/` (for example in `internal_docs/`) so they are excluded from public publishing.
 
 ## Local development
 Requirements:
@@ -34,26 +34,18 @@ npm run preview
 ```
 
 ## Publishing model (monorepo → public docs repo)
-The recommended sync model is `git subtree`:
+Use a snapshot sync from repository root:
 
 1. Add public remote (once):
 ```bash
 git remote add docs-public git@github.com:<org>/projectbrain-docs.git
 ```
-
+2. Publish current `docs/` snapshot:
 2. Push docs subtree to public repo:
-```bash
-git subtree push --prefix=docs docs-public main
-```
-
-Or use the helper script from repository root:
 ```bash
 bash scripts/sync-docs-public.sh docs-public main
 ```
-
-3. Pull merged community changes back:
-```bash
-git subtree pull --prefix=docs docs-public main --squash
+This script clones the public repo branch, replaces its contents with `docs/`, commits the change, and pushes it.
 ```
 
 ## Ownership and contribution boundary
