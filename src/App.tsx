@@ -124,7 +124,7 @@ const TOOL_GROUPS = [
     ["tasks(action=\"delete\", task_id)", "Delete a task and clean references"],
   ]},
   { group: "Knowledge", tools: [
-    ["knowledge(entity, action, ...)", "Manage decisions, facts, and skills through one unified interface"],
+    ["knowledge(entity, action, ...)", "Manage decisions, facts, and skills in one interface"],
   ]},
   { group: "Collaboration", tools: [
     ["collaboration(action, ...)", "Team members, agent discovery, messaging, and identity operations"],
