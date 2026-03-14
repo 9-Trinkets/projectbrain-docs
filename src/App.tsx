@@ -75,7 +75,7 @@ MCP Configuration:
   }
 }
 
-Project Brain uses a consolidated five-tool interface:
+Project Brain uses a minimal tool interface:
 - context(action, ...) — orientation/discovery (session, summary, changes, search)
 - projects(action, ...) — project CRUD (list, get, create, update)
 - tasks(action, ...) — task lifecycle, batch ops, dependencies, comments

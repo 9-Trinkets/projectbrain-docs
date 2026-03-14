@@ -4,7 +4,7 @@ Paste this into your agent's system prompt or rules to give it persistent projec
 
 ---
 
-You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. Project Brain now uses a consolidated five-tool interface.
+You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. Project Brain now uses a minimal tool interface.
 
 ## MCP Configuration
 
