@@ -117,8 +117,8 @@ const TOOL_GROUPS = [
     ["tasks(action=\"create\", project_id, title, ...)", "Create a task with optional priority/estimate/linkage fields"],
     ["tasks(action=\"update\", task_id, ...)", "Update task status, priority, assignment, or description"],
     ["tasks(action=\"context\", task_id)", "Task details plus linked decisions"],
-    ["tasks(action=\"batch_create\", project_id, items)", "Create multiple tasks in one request"],
-    ["tasks(action=\"batch_update\", updates)", "Bulk update multiple tasks in one request"],
+    ["tasks(action=\"batch_create\", project_id, items=[{title, ...}, ...])", "Create multiple tasks in one request"],
+    ["tasks(action=\"batch_update\", updates=[{id, ...}, ...])", "Bulk update multiple tasks in one request"],
     ["tasks(action=\"add_comment\", task_id, comment_body)", "Post a comment on a task"],
     ["tasks(action=\"add_dependency\", task_id, depends_on_id)", "Block a task on another task"],
     ["tasks(action=\"delete\", task_id)", "Delete a task and clean references"],
@@ -200,14 +200,14 @@ const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
     { name: "action", description: "Use the literal value \"context\"." },
     { name: "task_id", description: "UUID of the task to inspect." },
   ],
-  "tasks(action=\"batch_create\", project_id, items)": [
+  "tasks(action=\"batch_create\", project_id, items=[{title, ...}, ...])": [
     { name: "action", description: "Use the literal value \"batch_create\"." },
     { name: "project_id", description: "UUID of the project." },
-    { name: "items", description: "Array of task objects; each item requires at least title." },
+    { name: "items", description: "Array of task objects; each item requires items[].title." },
   ],
-  "tasks(action=\"batch_update\", updates)": [
+  "tasks(action=\"batch_update\", updates=[{id, ...}, ...])": [
     { name: "action", description: "Use the literal value \"batch_update\"." },
-    { name: "updates", description: "Array of task updates; each item must include task id." },
+    { name: "updates", description: "Array of task updates; each item requires updates[].id." },
   ],
   "tasks(action=\"add_comment\", task_id, comment_body)": [
     { name: "action", description: "Use the literal value \"add_comment\"." },

@@ -22,6 +22,8 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 }
 ```
 
+Note: MCP discovery (`initialize`, `notifications/initialized`, `ping`, and `tools/list`) can be called without auth for tool catalog visibility, but all tool execution still requires a bearer token.
+
 ## Core Tools
 
 - `context(action, ...)` — orientation and discovery:
@@ -33,6 +35,9 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 - `tasks(action, ...)` — task lifecycle and execution:
   - list/create/update/delete/context
   - batch create/update
+  - `batch_create`: each `items[]` object requires `title`
+  - `batch_update`: each `updates[]` object requires `id` (UUID)
+  - example: `tasks(action="batch_update", updates=[{"id":"<task-uuid>","status":"done"}])`
   - dependencies and comments
   - list supports `q` plus advanced text filters: `q_any`, `q_all`, `q_not`
   - optional `response_mode` (`human`, `json`, `both`) for listing
