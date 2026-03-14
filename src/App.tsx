@@ -60,7 +60,7 @@ const MCP_CONFIG = `{
 }`;
 
 /* ── System prompt ── */
-const SYSTEM_PROMPT = `You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. Here are the core tools you'll use most.
+const SYSTEM_PROMPT = `You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions.
 
 MCP Configuration:
 {
@@ -75,104 +75,59 @@ MCP Configuration:
   }
 }
 
-Entities:
-- Tasks — units of work (todo → in_progress → done/blocked)
-- Decisions — tradeoff records: "why this and not that?" Always include rationale + task_id.
-- Facts — durable project knowledge: conventions, constraints, context. Standing truths that persist across sessions.
-- Skills — reusable workflows and procedures agents can publish and consume. Team-wide or project-scoped.
-- Milestones — delivery phases that group tasks. Progress auto-computed.
-
-Core tools:
-- get_session_context(project_id) — START HERE. Returns tasks, decisions, facts, team, messages.
-- get_changes_since(project_id, since) — all changes since an ISO timestamp, grouped by entity type
-- search(project_id, q, limit?) — search across tasks, decisions, facts, and skills in one call
-- list_tasks(project_id, ..., response_mode?) — list tasks with filters and selectable response format (human/json/both)
-- create_task(project_id, title, ...) — create work items
-- update_task(task_id, ...) — update status, priority, or description
-- get_task_context(task_id) — task details + linked decisions
-- record_decision(project_id, title, rationale, task_id?) — log a tradeoff
-- list_decisions(project_id, q?) — list decisions (q for text search)
-- delete_task(task_id) — delete a task (cleans up deps + decision links)
-- create_fact(project_id, title, body?, category?) — record a convention/constraint/context
-- list_facts(project_id, q?) — read project facts (q for text search)
-- create_skill(title, body, ...) — publish a reusable workflow or procedure
-- list_skills(project_id?, category?, q?) — discover skills (returns project + team-wide)
-- get_skill(skill_id) — read full skill content before following it
-- send_message(recipient_id, body) — coordinate with another team member (agent or human)
-
-Use your MCP client's tool listing to see all available tools.
+Project Brain uses a consolidated five-tool interface:
+- context(action, ...) — orientation/discovery (session, summary, changes, search)
+- projects(action, ...) — project CRUD (list, get, create, update)
+- tasks(action, ...) — task lifecycle, batch ops, dependencies, comments
+- knowledge(entity, action, ...) — decisions, facts, skills
+- collaboration(action, ...) — team members, messaging, identity card, join team
 
 Workflow:
-1. get_session_context(project_id) → orient yourself (tasks, decisions, facts, messages)
-2. list_tasks(project_id, "todo") → pick work
-3. update_task(task_id, status="in_progress") → claim it
-4. Do the work. Record knowledge as you go:
-   - Tradeoff? → record_decision() with rationale + task_id
-   - Standing convention/constraint? → create_fact()
-   - Reusable workflow? → create_skill() so other agents can follow it
-   - Note on a task? → add_task_comment()
-5. update_task(task_id, status="done") → ship it
+1. projects(action="list") → identify the project
+2. context(action="session", project_id=...) → orient with current context
+3. tasks(action="list", project_id=..., status="todo") → pick work
+4. tasks(action="update", task_id=..., status="in_progress") → claim it
+5. Do the work and record knowledge:
+   - tradeoff → knowledge(entity="decision", action="create", ...)
+   - durable rule/constraint → knowledge(entity="fact", action="create", ...)
+   - reusable procedure → knowledge(entity="skill", action="create", ...)
+   - task note → tasks(action="add_comment", task_id=..., comment_body=...)
+6. tasks(action="update", task_id=..., status="done") → ship it
 
 Rules:
-- Always call get_session_context() at the start of every session.
-- Check list_skills() before starting unfamiliar work — someone may have documented how.
-- Read project facts — they contain conventions and constraints you must follow.
-- Record decisions as tradeoffs. If there's no "why not X?", it's a fact, not a decision.
-- When you figure out a reusable workflow, publish it with create_skill().
-- Update task status as you work. Don't leave tasks stuck in "todo".
-- Use get_task_context() before starting a task to see prior decisions.`;
+- Always start with context(action="session", project_id=...).
+- Check existing reusable guidance first with knowledge(entity="skill", action="list", ...).
+- Use tasks(action="context", task_id=...) before implementation when task history matters.
+- Keep task status up to date throughout execution.
+- Use context(action="changes", project_id=..., since=...) to catch up after time away.`;
 
 /* ── Tool groups ── */
 const TOOL_GROUPS = [
-  { group: "Orientation", tools: [
-    ["get_session_context(project_id)", "Start here — returns tasks, decisions, facts, skills, messages"],
-    ["get_project_summary(project_id)", "Task counts + milestone progress"],
-    ["get_changes_since(project_id, since)", "Catch up — all changes since an ISO timestamp"],
-    ["list_projects()", "Discover all active projects on your team"],
-    ["search(project_id, q, limit?)", "Search across tasks, decisions, facts, and skills in one call"],
-  ]},
-  { group: "Tasks", tools: [
-    ["create_task(project_id, title, ...)", "Create and assign work items"],
-    ["batch_create_tasks(project_id, tasks)", "Create multiple tasks in one call"],
-    ["update_task(task_id, ...)", "Update status, priority, or description"],
-    ["list_tasks(project_id, ..., response_mode?)", "Filter by status, milestone, or text"],
-    ["delete_task(task_id)", "Delete a task and clean up references"],
-    ["batch_update_tasks(updates)", "Bulk-update multiple tasks at once"],
-    ["get_task_context(task_id)", "Task details + linked decisions"],
-    ["add_task_comment(task_id, body)", "Leave a note on a task"],
-    ["add_dependency(task_id, depends_on_id)", "Mark task as blocked by another"],
-  ]},
-  { group: "Decisions", tools: [
-    ["record_decision(project_id, title, rationale, task_id?)", "Log a tradeoff with rationale"],
-    ["list_decisions(project_id, q?)", "List and search decisions"],
-    ["delete_decision(decision_id)", "Delete a decision"],
-  ]},
-  { group: "Facts", tools: [
-    ["create_fact(project_id, title, body?, category?)", "Record a convention, constraint, or context"],
-    ["list_facts(project_id, q?)", "Search and read durable project knowledge"],
-  ]},
-  { group: "Skills", tools: [
-    ["create_skill(title, body, ...)", "Publish a reusable workflow or procedure"],
-    ["list_skills(project_id?, category?, q?)", "Discover skills by project, category, or search"],
-    ["get_skill(skill_id)", "Read full skill content before following it"],
-    ["update_skill(skill_id, ...)", "Update a skill's content or tags"],
-    ["delete_skill(skill_id)", "Delete a skill"],
-  ]},
-  { group: "Milestones", tools: [
-    ["create_milestone(project_id, title, ...)", "Define a project phase or goal"],
-    ["update_milestone(milestone_id, ...)", "Update status, title, or due date"],
+  { group: "Context", tools: [
+    ["context(action=\"session\", project_id)", "Start here — full project context for the current session"],
+    ["context(action=\"summary\", project_id)", "Project status and milestone snapshot"],
+    ["context(action=\"changes\", project_id, since)", "Grouped changes since an ISO timestamp"],
+    ["context(action=\"search\", project_id, q, limit?)", "Cross-entity search across tasks, decisions, facts, and skills"],
   ]},
   { group: "Projects", tools: [
-    ["create_project(name, description?)", "Create a new project"],
-    ["update_project(project_id, ...)", "Update project name or description"],
+    ["projects(action, project_id?, name?, description?)", "Create, list, inspect, and update projects"],
   ]},
-  { group: "Agents & Messaging", tools: [
-    ["discover_agents()", "Find agents on your team with their roles"],
-    ["send_message(recipient_id, body)", "Message any team member (agent or human)"],
-    ["get_pending_messages()", "Check your inbox for unread messages"],
-    ["list_team_members()", "List all humans and agents on the team"],
-    ["update_my_card(description?, skills?, role?)", "Set your role, skills, and description"],
-    ["join_team(invite_code)", "Join an existing team via invite code"],
+  { group: "Tasks", tools: [
+    ["tasks(action=\"list\", project_id, status?, q?, response_mode?)", "List tasks with status/text filters and optional JSON output"],
+    ["tasks(action=\"create\", project_id, title, ...)", "Create a task with optional priority/estimate/linkage fields"],
+    ["tasks(action=\"update\", task_id, ...)", "Update task status, priority, assignment, or description"],
+    ["tasks(action=\"context\", task_id)", "Task details plus linked decisions"],
+    ["tasks(action=\"batch_create\", project_id, items)", "Create multiple tasks in one request"],
+    ["tasks(action=\"batch_update\", updates)", "Bulk update multiple tasks in one request"],
+    ["tasks(action=\"add_comment\", task_id, comment_body)", "Post a comment on a task"],
+    ["tasks(action=\"add_dependency\", task_id, depends_on_id)", "Block a task on another task"],
+    ["tasks(action=\"delete\", task_id)", "Delete a task and clean references"],
+  ]},
+  { group: "Knowledge", tools: [
+    ["knowledge(entity, action, ...)", "Manage decisions, facts, and skills through one unified interface"],
+  ]},
+  { group: "Collaboration", tools: [
+    ["collaboration(action, ...)", "Team members, agent discovery, messaging, and identity operations"],
   ]},
 ];
 type ToolParam = {
@@ -182,72 +137,116 @@ type ToolParam = {
 };
 
 const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
-  "create_task(project_id, title, ...)": [
-    { name: "project_id", description: "UUID of the target project." },
-    { name: "title", description: "Task title." },
-    { name: "description", optional: true, description: "Task description text." },
-    { name: "status", optional: true, description: "Initial status (for example: todo, in_progress, blocked, done)." },
-    { name: "priority", optional: true, description: "Priority label (for example: high, medium, low)." },
-    { name: "estimate", optional: true, description: "Optional estimate (hours)." },
-    { name: "milestone_id", optional: true, description: "Milestone UUID to attach this task to." },
-    { name: "assignee_id", optional: true, description: "Assignee UUID (agent or human)." },
-    { name: "sort_order", optional: true, description: "Optional explicit ordering index." },
+  "context(action=\"session\", project_id)": [
+    { name: "action", description: "Use the literal value \"session\"." },
+    { name: "project_id", description: "UUID of the project to load context for." },
   ],
-  "update_task(task_id, ...)": [
+  "context(action=\"summary\", project_id)": [
+    { name: "action", description: "Use the literal value \"summary\"." },
+    { name: "project_id", description: "UUID of the project to summarize." },
+  ],
+  "context(action=\"changes\", project_id, since)": [
+    { name: "action", description: "Use the literal value \"changes\"." },
+    { name: "project_id", description: "UUID of the project to inspect." },
+    { name: "since", description: "ISO timestamp lower-bound for returned changes." },
+  ],
+  "context(action=\"search\", project_id, q, limit?)": [
+    { name: "action", description: "Use the literal value \"search\"." },
+    { name: "project_id", description: "UUID of the project to search within." },
+    { name: "q", description: "Search query across tasks, decisions, facts, and skills." },
+    { name: "limit", optional: true, description: "Per-entity result limit (default 5, max 20)." },
+  ],
+  "projects(action, project_id?, name?, description?)": [
+    { name: "action", description: "One of: list, get, create, update." },
+    { name: "project_id", optional: true, description: "Required for get/update actions." },
+    { name: "name", optional: true, description: "Project name (required for create)." },
+    { name: "description", optional: true, description: "Project description." },
+  ],
+  "tasks(action=\"list\", project_id, status?, q?, response_mode?)": [
+    { name: "action", description: "Use the literal value \"list\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "status", optional: true, description: "Task status filter (todo, in_progress, blocked, done, cancelled)." },
+    { name: "q", optional: true, description: "Text search on task title/description." },
+    { name: "response_mode", optional: true, description: "Output format: human, json, or both." },
+  ],
+  "tasks(action=\"create\", project_id, title, ...)": [
+    { name: "action", description: "Use the literal value \"create\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "title", description: "Task title." },
+    { name: "description", optional: true, description: "Task description." },
+    { name: "status", optional: true, description: "Initial task status." },
+    { name: "priority", optional: true, description: "Priority label." },
+    { name: "estimate", optional: true, description: "Estimated effort." },
+    { name: "sort_order", optional: true, description: "Ordering index." },
+    { name: "milestone_id", optional: true, description: "Milestone UUID or empty string to clear." },
+    { name: "assignee_id", optional: true, description: "Assignee UUID or empty string to clear." },
+  ],
+  "tasks(action=\"update\", task_id, ...)": [
+    { name: "action", description: "Use the literal value \"update\"." },
     { name: "task_id", description: "UUID of the task to update." },
     { name: "title", optional: true, description: "Updated task title." },
     { name: "description", optional: true, description: "Updated task description." },
     { name: "status", optional: true, description: "Updated status." },
     { name: "priority", optional: true, description: "Updated priority." },
     { name: "estimate", optional: true, description: "Updated estimate." },
-    { name: "sort_order", optional: true, description: "Updated ordering index." },
-    { name: "milestone_id", optional: true, description: "Updated milestone UUID (or empty to clear)." },
-    { name: "assignee_id", optional: true, description: "Updated assignee UUID (or empty to clear)." },
+    { name: "sort_order", optional: true, description: "Updated order index." },
+    { name: "milestone_id", optional: true, description: "Updated milestone UUID or empty string to clear." },
+    { name: "assignee_id", optional: true, description: "Updated assignee UUID or empty string to clear." },
   ],
-  "list_tasks(project_id, ..., response_mode?)": [
-    { name: "project_id", description: "UUID of the project to query." },
-    { name: "status", optional: true, description: "Filter by task status (for example: todo, in_progress, blocked, done)." },
-    { name: "milestone_id", optional: true, description: "Filter tasks by milestone UUID." },
-    { name: "q", optional: true, description: "Single text filter on title/description." },
-    { name: "q_any", optional: true, description: "OR terms: task matches if any term matches title/description." },
-    { name: "q_all", optional: true, description: "AND terms: task must match every term." },
-    { name: "q_not", optional: true, description: "NOT terms: exclude tasks matching any listed term." },
-    { name: "cursor", optional: true, description: "Pagination cursor from a previous response." },
-    { name: "limit", optional: true, description: "Max items to return (default 50, max 100)." },
-    { name: "response_mode", optional: true, description: "Output format: human, json, or both." },
+  "tasks(action=\"context\", task_id)": [
+    { name: "action", description: "Use the literal value \"context\"." },
+    { name: "task_id", description: "UUID of the task to inspect." },
   ],
-  "update_skill(skill_id, ...)": [
-    { name: "skill_id", description: "UUID of the skill to update." },
-    { name: "title", optional: true, description: "Updated skill title." },
-    { name: "body", optional: true, description: "Updated skill content/body." },
-    { name: "category", optional: true, description: "Updated category." },
-    { name: "tags", optional: true, description: "Updated tag list." },
-  ],
-  "create_milestone(project_id, title, ...)": [
+  "tasks(action=\"batch_create\", project_id, items)": [
+    { name: "action", description: "Use the literal value \"batch_create\"." },
     { name: "project_id", description: "UUID of the project." },
-    { name: "title", description: "Milestone title." },
-    { name: "description", optional: true, description: "Milestone description." },
-    { name: "due_date", optional: true, description: "Due date (YYYY-MM-DD)." },
-    { name: "status", optional: true, description: "Milestone status (planned, in_progress, completed, cancelled)." },
+    { name: "items", description: "Array of task objects; each item requires at least title." },
   ],
-  "update_milestone(milestone_id, ...)": [
-    { name: "milestone_id", description: "UUID of the milestone to update." },
-    { name: "title", optional: true, description: "Updated title." },
-    { name: "description", optional: true, description: "Updated description." },
-    { name: "due_date", optional: true, description: "Updated due date (YYYY-MM-DD)." },
-    { name: "status", optional: true, description: "Updated milestone status." },
+  "tasks(action=\"batch_update\", updates)": [
+    { name: "action", description: "Use the literal value \"batch_update\"." },
+    { name: "updates", description: "Array of task updates; each item must include task id." },
   ],
-  "create_skill(title, body, ...)": [
-    { name: "title", description: "Skill title." },
-    { name: "body", description: "Skill content/body." },
-    { name: "project_id", optional: true, description: "Scope to a project UUID (omit for team-wide skill)." },
-    { name: "category", optional: true, description: "Optional skill category." },
-    { name: "tags", optional: true, description: "Optional tag list." },
+  "tasks(action=\"add_comment\", task_id, comment_body)": [
+    { name: "action", description: "Use the literal value \"add_comment\"." },
+    { name: "task_id", description: "UUID of the target task." },
+    { name: "comment_body", description: "Comment markdown/text body." },
   ],
-  "update_project(project_id, ...)": [
-    { name: "project_id", description: "UUID of the project to update." },
-    { name: "name", optional: true, description: "Updated project name." },
-    { name: "description", optional: true, description: "Updated project description." },
+  "tasks(action=\"add_dependency\", task_id, depends_on_id)": [
+    { name: "action", description: "Use the literal value \"add_dependency\"." },
+    { name: "task_id", description: "UUID of the blocked task." },
+    { name: "depends_on_id", description: "UUID of the prerequisite task." },
+  ],
+  "tasks(action=\"delete\", task_id)": [
+    { name: "action", description: "Use the literal value \"delete\"." },
+    { name: "task_id", description: "UUID of the task to delete." },
+  ],
+  "knowledge(entity, action, ...)": [
+    { name: "entity", description: "One of: decision, fact, skill." },
+    { name: "action", description: "One of: list, get, create, update, delete." },
+    { name: "project_id", optional: true, description: "Required for decision/fact list/create, optional for skill." },
+    { name: "item_id", optional: true, description: "Required for get/update/delete." },
+    { name: "title", optional: true, description: "Title field used for create/update." },
+    { name: "body", optional: true, description: "Body content (facts and skills)." },
+    { name: "rationale", optional: true, description: "Decision rationale." },
+    { name: "task_id", optional: true, description: "Optional task link for decisions." },
+    { name: "category", optional: true, description: "Category for facts/skills." },
+    { name: "tags", optional: true, description: "Tag list for skills." },
+    { name: "q", optional: true, description: "Text search query for list actions." },
+    { name: "cursor", optional: true, description: "Pagination cursor." },
+    { name: "limit", optional: true, description: "Pagination size." },
+  ],
+  "collaboration(action, ...)": [
+    { name: "action", description: "One of: list_team_members, discover_agents, send_message, get_messages, update_my_card, join_team." },
+    { name: "recipient_id", optional: true, description: "Required for send_message." },
+    { name: "body", optional: true, description: "Message body for send_message." },
+    { name: "message_type", optional: true, description: "Message type (defaults to info)." },
+    { name: "subject", optional: true, description: "Optional message subject." },
+    { name: "include_read", optional: true, description: "For get_messages: include already-read messages." },
+    { name: "mark_as_read", optional: true, description: "For get_messages: mark returned unread messages as read." },
+    { name: "description", optional: true, description: "For update_my_card: profile description." },
+    { name: "skills", optional: true, description: "For update_my_card: list of capability tags." },
+    { name: "role", optional: true, description: "For update_my_card: planner/implementer/reviewer/general." },
+    { name: "invite_code", optional: true, description: "For join_team action." },
   ],
 };
 
@@ -425,7 +424,7 @@ export default function App() {
                 <h3 className="font-semibold text-white">4. Start your agent</h3>
                 <p className="mt-2 text-sm text-gray-400">
                   Your agent now has persistent project memory. It should call{" "}
-                  <code className="text-accent-light">get_session_context()</code> at the start of every session to orient itself.
+                  <code className="text-accent-light">context(action=&quot;session&quot;, project_id=...)</code> at the start of every session to orient itself.
                 </p>
               </div>
             </div>
@@ -508,30 +507,30 @@ export default function App() {
                 <ol className="space-y-3 text-sm text-gray-400">
                   <li className="flex gap-3">
                     <span className="shrink-0 font-mono text-gray-600">1.</span>
-                    <span><code className="text-gray-300">get_session_context(project_id)</code> — orient yourself: tasks, decisions, facts, messages</span>
+                    <span><code className="text-gray-300">context(action=&quot;session&quot;, project_id)</code> — orient yourself: tasks, decisions, facts, skills, team</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="shrink-0 font-mono text-gray-600">2.</span>
-                    <span><code className="text-gray-300">list_tasks(project_id, &quot;todo&quot;)</code> — pick work</span>
+                    <span><code className="text-gray-300">tasks(action=&quot;list&quot;, project_id, status=&quot;todo&quot;)</code> — pick work</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="shrink-0 font-mono text-gray-600">3.</span>
-                    <span><code className="text-gray-300">update_task(task_id, status=&quot;in_progress&quot;)</code> — claim it</span>
+                    <span><code className="text-gray-300">tasks(action=&quot;update&quot;, task_id, status=&quot;in_progress&quot;)</code> — claim it</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="shrink-0 font-mono text-gray-600">4.</span>
                     <span>Do the work. Record knowledge as you go:
                       <ul className="ml-4 mt-2 space-y-1">
-                        <li>Tradeoff? → <code className="text-gray-300">record_decision()</code> with rationale + task_id</li>
-                        <li>Convention/constraint? → <code className="text-gray-300">create_fact()</code></li>
-                        <li>Reusable workflow? → <code className="text-gray-300">create_skill()</code></li>
-                        <li>Note on a task? → <code className="text-gray-300">add_task_comment()</code></li>
+                        <li>Tradeoff? → <code className="text-gray-300">knowledge(entity=&quot;decision&quot;, action=&quot;create&quot;, ...)</code></li>
+                        <li>Convention/constraint? → <code className="text-gray-300">knowledge(entity=&quot;fact&quot;, action=&quot;create&quot;, ...)</code></li>
+                        <li>Reusable workflow? → <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;create&quot;, ...)</code></li>
+                        <li>Note on a task? → <code className="text-gray-300">tasks(action=&quot;add_comment&quot;, task_id, comment_body)</code></li>
                       </ul>
                     </span>
                   </li>
                   <li className="flex gap-3">
                     <span className="shrink-0 font-mono text-gray-600">5.</span>
-                    <span><code className="text-gray-300">update_task(task_id, status=&quot;done&quot;)</code> — ship it</span>
+                    <span><code className="text-gray-300">tasks(action=&quot;update&quot;, task_id, status=&quot;done&quot;)</code> — ship it</span>
                   </li>
                 </ol>
               </div>
@@ -539,13 +538,13 @@ export default function App() {
               <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
                 <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Rules</h3>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  <li>• Always call <code className="text-gray-300">get_session_context()</code> at the start of every session.</li>
-                  <li>• Check <code className="text-gray-300">list_skills()</code> before starting unfamiliar work — someone may have documented how.</li>
+                  <li>• Always call <code className="text-gray-300">context(action=&quot;session&quot;, project_id)</code> at the start of every session.</li>
+                  <li>• Check <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;list&quot;, ...)</code> before starting unfamiliar work.</li>
                   <li>• Read project facts — they contain conventions and constraints you must follow.</li>
                   <li>• Record decisions as tradeoffs. If there&apos;s no &quot;why not X?&quot;, it&apos;s a fact, not a decision.</li>
-                  <li>• When you figure out a reusable workflow, publish it with <code className="text-gray-300">create_skill()</code>.</li>
+                  <li>• When you figure out a reusable workflow, publish it with <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;create&quot;, ...)</code>.</li>
                   <li>• Update task status as you work. Don&apos;t leave tasks stuck in &quot;todo&quot;.</li>
-                  <li>• Use <code className="text-gray-300">get_task_context()</code> before starting a task to see prior decisions.</li>
+                  <li>• Use <code className="text-gray-300">tasks(action=&quot;context&quot;, task_id)</code> before starting a task to see prior decisions.</li>
                 </ul>
               </div>
 
