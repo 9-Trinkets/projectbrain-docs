@@ -1,64 +1,41 @@
 # Project Brain Docs
 This directory contains the documentation site for Project Brain.
 
-The docs app is published to a standalone public repository using a snapshot sync script while remaining developed inside this monorepo.
+## What this docs site includes
+- Product guides and workflows
+- API and MCP usage references
+- Setup and onboarding documentation
+- Technical explainers
 
-## Scope
-- In scope: product docs, setup guides, API/MCP usage docs, technical explainers.
-- Out of scope: private app backend/frontend source code, internal infrastructure, and secrets.
-- Internal prompts, delivery plans, and strategy notes must live outside `docs/` (for example in `internal_docs/`) so they are excluded from public publishing.
+## Stack
+- React
+- TypeScript
+- Vite
 
 ## Local development
-Requirements:
-- Node.js 20+
-- npm
+From the `docs/` directory:
 
-Install dependencies:
-```bash
-npm install
-```
+1. Install dependencies:
+   - `npm install`
+2. Start local dev server:
+   - `npm run dev`
 
-Run locally:
-```bash
-npm run dev
-```
+## Build and preview
+From the `docs/` directory:
 
-Build:
-```bash
-npm run build
-```
+- Build:
+  - `npm run build`
+- Preview production build:
+  - `npm run preview`
 
-Preview production build:
-```bash
-npm run preview
-```
+## Directory structure
+- `src/` — documentation app source code
+- `public/` — static assets
+- `package.json` — scripts and dependencies
 
-## Publishing model (monorepo → public docs repo)
-Use a snapshot sync from repository root:
-
-1. Add public remote (once):
-```bash
-git remote add docs-public git@github.com:<org>/projectbrain-docs.git
-```
-2. Publish current `docs/` snapshot:
-```bash
-bash scripts/sync-docs-public.sh docs-public main
-```
-This script clones the public repo branch, replaces its contents with `docs/`, commits the change, and pushes it.
-
-## GitHub Actions automation
-This repository includes `.github/workflows/docs-sync.yml`, which automatically publishes docs when `docs/**` changes on `main`.
-
-Required secret in this repository:
-- `DOCS_PUBLIC_DEPLOY_KEY`: private SSH deploy key with write access to `9-Trinkets/projectbrain-docs`
-
-The corresponding public key should be added to the `projectbrain-docs` repository (deploy keys with write access enabled).
+## Publishing
+Documentation is published through the public docs repository:
+- `https://github.com/9-Trinkets/projectbrain-docs`
 
 ## Contributing
-- Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for setup, style guidelines, and PR flow.
-- Use the **Edit this page on GitHub** link in the docs UI for fast fixes.
-
-## Ownership and contribution boundary
-- Docs content is community-editable through the public docs repository.
-- Application/runtime source code remains in the private product repository.
-- Changes that require private code access should be documented as issues, then implemented internally.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for contribution guidelines.
