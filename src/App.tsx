@@ -289,6 +289,10 @@ function resolveToolParams(tool: string): ToolParam[] {
   }));
 }
 
+function formatToolLabel(tool: string): string {
+  return tool.replace(/\\"/g, "\"");
+}
+
 export default function App() {
   const [active, setActive] = useState<string>("getting-started");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -453,18 +457,21 @@ export default function App() {
                       const params = resolveToolParams(tool);
                       const isExpanded = !!expandedToolParams[tool];
                       const hasParams = params.length > 0;
+                      const toolLabel = formatToolLabel(tool);
 
                       return (
                         <div key={tool} className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
-                            <code className="font-mono text-sm text-accent-light break-words">{tool}</code>
-                            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                              <span className="text-sm text-gray-500">{desc}</span>
+                          <div className="space-y-3">
+                            <div className="overflow-x-auto rounded-md border border-gray-800/80 bg-gray-950/60 px-3 py-2">
+                              <code className="font-mono text-sm leading-relaxed text-accent-light whitespace-pre-wrap break-words">{toolLabel}</code>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <span className="min-w-0 text-sm text-gray-500">{desc}</span>
                               {hasParams && (
                                 <button
                                   type="button"
                                   onClick={() => toggleToolParams(tool)}
-                                  className="w-fit rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 transition hover:border-accent hover:text-white"
+                                  className="w-fit shrink-0 rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 transition hover:border-accent hover:text-white"
                                 >
                                   {isExpanded ? "Hide params" : "Show params"}
                                 </button>
