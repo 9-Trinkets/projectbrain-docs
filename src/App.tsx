@@ -50,7 +50,7 @@ function Code({ children, copyable, wrap }: { children: string; copyable?: boole
 const MCP_CONFIG = `{
   "mcpServers": {
     "project-brain": {
-      "url": "https://mcp.projectbrain.tools/agent/mcp",
+      "url": "https://mcp.projectbrain.tools",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer pb_YOUR_API_KEY"
@@ -66,7 +66,7 @@ MCP Configuration:
 {
   "mcpServers": {
     "project-brain": {
-      "url": "https://mcp.projectbrain.tools/agent/mcp",
+      "url": "https://mcp.projectbrain.tools",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer pb_YOUR_API_KEY"

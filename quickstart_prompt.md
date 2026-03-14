@@ -12,7 +12,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
 {
   "mcpServers": {
     "project-brain": {
-      "url": "https://mcp.projectbrain.tools/agent/mcp",
+      "url": "https://mcp.projectbrain.tools",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer pb_YOUR_API_KEY"
