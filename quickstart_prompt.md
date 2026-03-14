@@ -34,6 +34,7 @@ You have access to Project Brain via MCP — a persistent, structured project ba
   - list/create/update/delete/context
   - batch create/update
   - dependencies and comments
+  - list supports `q` plus advanced text filters: `q_any`, `q_all`, `q_not`
   - optional `response_mode` (`human`, `json`, `both`) for listing
 - `knowledge(entity, action, ...)` — decisions, facts, and skills in one tool (`entity` = `decision|fact|skill`)
 - `collaboration(action, ...)` — team members, agent discovery, messaging, identity card updates, and team join

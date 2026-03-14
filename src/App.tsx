@@ -78,7 +78,7 @@ MCP Configuration:
 Project Brain uses a minimal tool interface:
 - context(action, ...) — orientation/discovery (session, summary, changes, search)
 - projects(action, ...) — project CRUD (list, get, create, update)
-- tasks(action, ...) — task lifecycle, batch ops, dependencies, comments
+- tasks(action, ...) — task lifecycle, batch ops, dependencies, comments, and advanced list filters (q_any/q_all/q_not)
 - knowledge(entity, action, ...) — decisions, facts, skills
 - collaboration(action, ...) — team members, messaging, identity card, join team
 
@@ -113,7 +113,7 @@ const TOOL_GROUPS = [
     ["projects(action, project_id?, name?, description?)", "Create, list, inspect, and update projects"],
   ]},
   { group: "Tasks", tools: [
-    ["tasks(action=\"list\", project_id, status?, q?, response_mode?)", "List tasks with status/text filters and optional JSON output"],
+    ["tasks(action=\\\"list\\\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)", "List tasks with status/text filters and optional JSON output"],
     ["tasks(action=\"create\", project_id, title, ...)", "Create a task with optional priority/estimate/linkage fields"],
     ["tasks(action=\"update\", task_id, ...)", "Update task status, priority, assignment, or description"],
     ["tasks(action=\"context\", task_id)", "Task details plus linked decisions"],
@@ -162,11 +162,14 @@ const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
     { name: "name", optional: true, description: "Project name (required for create)." },
     { name: "description", optional: true, description: "Project description." },
   ],
-  "tasks(action=\"list\", project_id, status?, q?, response_mode?)": [
+  "tasks(action=\\\"list\\\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)": [
     { name: "action", description: "Use the literal value \"list\"." },
     { name: "project_id", description: "UUID of the project." },
     { name: "status", optional: true, description: "Task status filter (todo, in_progress, blocked, done, cancelled)." },
     { name: "q", optional: true, description: "Text search on task title/description." },
+    { name: "q_any", optional: true, description: "OR terms: task matches if any provided term matches." },
+    { name: "q_all", optional: true, description: "AND terms: task must match every provided term." },
+    { name: "q_not", optional: true, description: "Exclusion terms: task must not match any provided term." },
     { name: "response_mode", optional: true, description: "Output format: human, json, or both." },
   ],
   "tasks(action=\"create\", project_id, title, ...)": [
