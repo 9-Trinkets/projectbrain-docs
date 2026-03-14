@@ -31,10 +31,12 @@ Note: MCP discovery (`initialize`, `notifications/initialized`, `ping`, and `too
   - `summary`: project status and milestone snapshot
   - `changes`: grouped audit changes since an ISO timestamp
   - `search`: cross-entity search
+  - `shortlist`: intent-aware top-k tool-action shortlist (`q`, optional `limit`, optional `full_tool_mode=true` for full output)
 - `projects(action, ...)` — project CRUD (`list`, `get`, `create`, `update`)
 - `tasks(action, ...)` — task lifecycle and execution:
   - list/create/update/delete/context
   - batch create/update
+  - milestone operations: `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`
   - `batch_create`: each `items[]` object requires `title`
   - `batch_update`: each `updates[]` object requires `id` (UUID)
   - example: `tasks(action="batch_update", updates=[{"id":"<task-uuid>","status":"done"}])`
