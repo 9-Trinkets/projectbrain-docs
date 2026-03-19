@@ -1,5 +1,5 @@
-# Project Brain Docs
-This directory contains the documentation site for Project Brain.
+# ProjectBrain Docs
+This directory contains the documentation site for ProjectBrain.
 
 ## What this docs site includes
 - Product guides and workflows

@@ -1,10 +1,10 @@
-# Project Brain — Agent Quickstart Prompt
+# ProjectBrain — Agent Quickstart Prompt
 
 Paste this into your agent's system prompt or rules to give it persistent project memory.
 
 ---
 
-You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions. Project Brain now uses a minimal tool interface.
+You have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions. ProjectBrain now uses a minimal tool interface.
 
 ## MCP Configuration
 

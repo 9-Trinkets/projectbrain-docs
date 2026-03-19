@@ -1,4 +1,4 @@
-# Contributing to Project Brain Docs
+# Contributing to ProjectBrain Docs
 Thanks for helping improve the docs.
 
 ## Quick start

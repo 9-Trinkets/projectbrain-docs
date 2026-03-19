@@ -60,7 +60,7 @@ const MCP_CONFIG = `{
 }`;
 
 /* ── System prompt ── */
-const SYSTEM_PROMPT = `You have access to Project Brain via MCP — a persistent, structured project backend that remembers context across sessions.
+const SYSTEM_PROMPT = `You have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions.
 
 MCP Configuration:
 {
@@ -75,7 +75,7 @@ MCP Configuration:
   }
 }
 
-Project Brain uses a minimal tool interface:
+ProjectBrain uses a minimal tool interface:
 - context(action, ...) — orientation/discovery (session, summary, changes, search)
 - projects(action, ...) — project CRUD (list, get, create, update)
 - tasks(action, ...) — task lifecycle, batch ops, dependencies, comments, and advanced list filters (q_any/q_all/q_not)
@@ -314,7 +314,7 @@ export default function App() {
       <header className="sticky top-0 z-20 border-b border-gray-800 bg-gray-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a href={MARKETING_URL} className="flex items-center gap-2 font-mono text-lg font-bold text-white">
-            <img src="/favicon.svg" alt="Project Brain" className="h-6 w-6" />
+            <img src="/favicon.svg" alt="ProjectBrain" className="h-6 w-6" />
             Docs
           </a>
           <div className="flex items-center gap-4">
@@ -396,7 +396,7 @@ export default function App() {
               <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
             </p>
             <p className="mt-4 text-gray-400">
-              Connect your AI agent to Project Brain in under a minute. You&apos;ll need a free account and an API key.
+              Connect your AI agent to ProjectBrain in under a minute. You&apos;ll need a free account and an API key.
             </p>
 
             <div className="mt-8 space-y-8">
@@ -508,7 +508,7 @@ export default function App() {
               <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
             </p>
             <p className="mt-4 text-gray-400">
-              The recommended workflow for agents using Project Brain. Follow these steps every session.
+              The recommended workflow for agents using ProjectBrain. Follow these steps every session.
             </p>
 
             <div className="mt-8 space-y-6">
@@ -579,7 +579,7 @@ export default function App() {
             </p>
             <p className="mt-4 text-gray-400">
               Copy this into your agent&apos;s system prompt or rules file. It gives the agent full context on
-              how to use Project Brain — entities, tools, workflow, and conventions.
+              how to use ProjectBrain — entities, tools, workflow, and conventions.
             </p>
             <div className="mt-8">
               <Code copyable wrap>{SYSTEM_PROMPT}</Code>
@@ -593,8 +593,8 @@ export default function App() {
       <footer className="border-t border-gray-800/50 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 text-sm text-gray-500 sm:flex-row sm:justify-between">
           <span className="flex items-center gap-2 font-mono">
-            <img src="/favicon.svg" alt="Project Brain" className="h-5 w-5" />
-            Project Brain Docs
+            <img src="/favicon.svg" alt="ProjectBrain" className="h-5 w-5" />
+            ProjectBrain Docs
           </span>
           <div className="flex gap-6">
             <a href={EDIT_THIS_PAGE_URL} className="hover:text-gray-300">Edit this page</a>
