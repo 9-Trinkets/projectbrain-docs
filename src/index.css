@@ -3,7 +3,7 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-display: "Instrument Serif", ui-serif, serif;
+  --font-display: "Lora", ui-serif, serif;
   --color-accent: #4F62F7;
   --color-accent-light: #7482F8;
 }
