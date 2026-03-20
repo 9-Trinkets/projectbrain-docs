@@ -9,8 +9,10 @@ const CONTRIBUTING_URL = `${DOCS_REPO_URL}/blob/main/CONTRIBUTING.md`;
 
 const SECTIONS = [
   { id: "getting-started", label: "Getting Started" },
+  { id: "claude-code-skill", label: "Claude Code Skill" },
   { id: "tools", label: "MCP Tools Reference" },
   { id: "workflow", label: "Agent Workflow" },
+  { id: "curation", label: "Memory Curation" },
   { id: "system-prompt", label: "System Prompt" },
 ] as const;
 
@@ -81,6 +83,7 @@ ProjectBrain uses a minimal tool interface:
 - tasks(action, ...) — task lifecycle, batch ops, dependencies, comments, and advanced list filters (q_any/q_all/q_not)
 - knowledge(entity, action, ...) — decisions, facts, skills
 - collaboration(action, ...) — team members, messaging, identity card, join team
+- files(action, ...) — versioned documents: drafts, specs, reports, reviews, code linked to tasks/milestones
 
 Workflow:
 1. projects(action="list") → identify the project
@@ -128,6 +131,14 @@ const TOOL_GROUPS = [
   ]},
   { group: "Collaboration", tools: [
     ["collaboration(action, ...)", "Team members, agent discovery, messaging, and identity operations"],
+  ]},
+  { group: "Files", tools: [
+    ["files(action=\"list\", project_id, file_type?)", "List versioned files for a project"],
+    ["files(action=\"get\", file_id, version?)", "Get a file — latest version or a specific version number"],
+    ["files(action=\"create\", project_id, title, file_type, body, entity_type?, entity_id?)", "Create a new versioned file linked to a project or entity"],
+    ["files(action=\"add_version\", file_id, body)", "Append a new version to an existing file"],
+    ["files(action=\"list_versions\", file_id)", "List all versions of a file"],
+    ["files(action=\"delete\", file_id)", "Delete a file and all its versions"],
   ]},
 ];
 type ToolParam = {
@@ -250,6 +261,38 @@ const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
     { name: "skills", optional: true, description: "For update_my_card: list of capability tags." },
     { name: "role", optional: true, description: "For update_my_card: planner/implementer/reviewer/general." },
     { name: "invite_code", optional: true, description: "For join_team action." },
+  ],
+  "files(action=\"list\", project_id, file_type?)": [
+    { name: "action", description: "Use the literal value \"list\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "file_type", optional: true, description: "Filter by type: draft, spec, report, review, or code." },
+  ],
+  "files(action=\"get\", file_id, version?)": [
+    { name: "action", description: "Use the literal value \"get\"." },
+    { name: "file_id", description: "UUID of the file." },
+    { name: "version", optional: true, description: "Specific version number to retrieve; omit for latest." },
+  ],
+  "files(action=\"create\", project_id, title, file_type, body, entity_type?, entity_id?)": [
+    { name: "action", description: "Use the literal value \"create\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "title", description: "File title." },
+    { name: "file_type", description: "One of: draft, spec, report, review, code." },
+    { name: "body", description: "File content (markdown)." },
+    { name: "entity_type", optional: true, description: "Entity type to link to, e.g. task or milestone." },
+    { name: "entity_id", optional: true, description: "UUID of the linked entity." },
+  ],
+  "files(action=\"add_version\", file_id, body)": [
+    { name: "action", description: "Use the literal value \"add_version\"." },
+    { name: "file_id", description: "UUID of the file to version." },
+    { name: "body", description: "Updated file content (markdown)." },
+  ],
+  "files(action=\"list_versions\", file_id)": [
+    { name: "action", description: "Use the literal value \"list_versions\"." },
+    { name: "file_id", description: "UUID of the file." },
+  ],
+  "files(action=\"delete\", file_id)": [
+    { name: "action", description: "Use the literal value \"delete\"." },
+    { name: "file_id", description: "UUID of the file to delete permanently." },
   ],
 };
 
@@ -437,6 +480,74 @@ export default function App() {
             </div>
           </section>
 
+          {/* ── Claude Code Skill ── */}
+          <section id="claude-code-skill" className="mb-16">
+            <h1 className="font-mono text-3xl font-bold text-white">Claude Code Skill</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
+            <p className="mt-4 text-gray-400">
+              The official Claude Code skill gives Claude deep, built-in knowledge of Project Brain workflows,
+              tool APIs, and knowledge-capture patterns — without pasting a system prompt.
+            </p>
+
+            <div className="mt-8 space-y-8">
+              <div>
+                <h3 className="font-semibold text-white">Install</h3>
+                <p className="mt-2 mb-3 text-sm text-gray-400">
+                  Run this once to install the skill globally for Claude Code:
+                </p>
+                <Code copyable>npx skills add project-brain-skill -g -y</Code>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white">What the skill does</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  Once installed, Claude Code automatically loads the skill when you mention Project Brain or any of its tools.
+                  It provides:
+                </p>
+                <ul className="mt-3 space-y-2 text-sm text-gray-400">
+                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Session start workflow</strong> — reminds Claude to call <code className="text-accent-light">context(action="session")</code> before acting</span></li>
+                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Proactive knowledge logging</strong> — guidance on when and how to create facts, decisions, and skills without being asked</span></li>
+                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Complete tool API reference</strong> — all six MCP tools with every action and parameter, loaded on demand</span></li>
+                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Knowledge quality patterns</strong> — examples of good vs. bad entries, anti-patterns, and when to update vs. create new</span></li>
+                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Agent handoff workflow</strong> — how to leave clean state when handing off to another agent</span></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white">Trigger phrases</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  The skill activates automatically when you say things like:
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[
+                    "log this to project brain",
+                    "check the knowledge base",
+                    "load project context",
+                    "create a task",
+                    "track this decision",
+                    "log a fact",
+                    "send a message to an agent",
+                    "check my inbox",
+                  ].map((phrase) => (
+                    <div key={phrase} className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2 font-mono text-xs text-gray-400">
+                      &ldquo;{phrase}&rdquo;
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white">Without the skill</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  If you&apos;re not using Claude Code, paste the <a href="#system-prompt" onClick={() => scrollTo("system-prompt")} className="text-accent-light hover:underline">system prompt</a> into your agent&apos;s rules file instead.
+                  It covers the same core workflow.
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* ── Tools Reference ── */}
           <section id="tools" className="mb-16">
             <h1 className="font-mono text-3xl font-bold text-white">MCP Tools Reference</h1>
@@ -566,6 +677,90 @@ export default function App() {
                   <div><dt className="font-semibold text-white">Facts</dt><dd className="text-gray-400">Durable project knowledge: conventions, constraints, context. Persist across sessions.</dd></div>
                   <div><dt className="font-semibold text-white">Skills</dt><dd className="text-gray-400">Reusable workflows and procedures. Team-wide or project-scoped. Agents publish and consume them.</dd></div>
                   <div><dt className="font-semibold text-white">Milestones</dt><dd className="text-gray-400">Delivery phases grouping tasks. Progress auto-computed from task status.</dd></div>
+                </dl>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Memory Curation ── */}
+          <section id="curation" className="mb-16">
+            <h1 className="font-mono text-3xl font-bold text-white">Memory Curation</h1>
+            <p className="mt-2 text-sm">
+              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+            </p>
+            <p className="mt-4 text-gray-400">
+              ProjectBrain includes an automated curator that periodically reviews your knowledge base for
+              quality issues and semantic duplicates, then surfaces recommendations in the UI.
+            </p>
+
+            <div className="mt-8 space-y-6">
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">How it works</h3>
+                <ol className="space-y-3 text-sm text-gray-400">
+                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">1.</span><span>The curator runs on a schedule for projects with curation enabled.</span></li>
+                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">2.</span><span>A rule-based pass always runs — catches stale knowledge (not reviewed within your staleness threshold) and structurally poor entries.</span></li>
+                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">3.</span><span>An LLM pass runs when knowledge has changed since the last run — detects semantic duplicates and quality issues that rules can&apos;t catch.</span></li>
+                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">4.</span><span>Recommendations appear in the <strong className="text-gray-300">Memory Health</strong> tab inside each project.</span></li>
+                </ol>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Recommendation types</h3>
+                <dl className="space-y-4 text-sm">
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-white">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-blue-500/20 text-blue-300">MERGE</span>
+                    </dt>
+                    <dd className="mt-1 text-gray-400">Two entries are semantically equivalent. Accepting merges them into one, applying a suggested combined body to the canonical entry and marking the other as superseded.</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-white">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-300">ARCHIVE</span>
+                    </dt>
+                    <dd className="mt-1 text-gray-400">An entry is stale or no longer relevant. Accepting marks it as superseded.</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-white">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-teal-500/20 text-teal-300">REFRESH</span>
+                    </dt>
+                    <dd className="mt-1 text-gray-400">An entry hasn&apos;t been reviewed in a while. Accepting stamps <code className="text-gray-300">last_reviewed_at</code>, signalling it&apos;s still current.</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-white">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-yellow-500/20 text-yellow-300">FLAG</span>
+                    </dt>
+                    <dd className="mt-1 text-gray-400">An entry has a quality issue (vague title, missing rationale, empty body). Three resolution options: <strong className="text-gray-300">Delete</strong> (remove the entry), <strong className="text-gray-300">Edit</strong> (rewrite inline), or <strong className="text-gray-300">Keep</strong> (dismiss without changes).</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-2 font-semibold text-white">
+                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-purple-500/20 text-purple-300">SUPERSEDE</span>
+                    </dt>
+                    <dd className="mt-1 text-gray-400">One entry replaces another. Accepting links the older entry&apos;s <code className="text-gray-300">superseded_by_id</code> to the newer one.</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Configuration</h3>
+                <p className="mb-3 text-sm text-gray-400">Curation is configured per project under <strong className="text-gray-300">Project → Settings</strong>:</p>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">curation_enabled</dt><dd className="text-gray-400">Toggle the curator on/off for this project.</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">staleness_days</dt><dd className="text-gray-400">Days before an unreviewed entry is flagged for refresh (default: 90).</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">confidence_floor</dt><dd className="text-gray-400">Minimum confidence % for a recommendation to surface (default: 75%).</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">entity_types</dt><dd className="text-gray-400">Which entity types to review: fact, decision, skill (default: all).</dd></div>
+                </dl>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Knowledge quality fields</h3>
+                <p className="mb-3 text-sm text-gray-400">
+                  Facts, decisions, and skills carry quality metadata that the curator reads and writes:
+                </p>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">confidence</dt><dd className="text-gray-400">Agent-assigned confidence in this entry (0.0–1.0). Low confidence entries are prioritised for review.</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">freshness_window_days</dt><dd className="text-gray-400">Override the project staleness threshold for this specific entry.</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">last_reviewed_at</dt><dd className="text-gray-400">Timestamp of the last review. Accepting a REFRESH recommendation stamps this.</dd></div>
+                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">superseded_by_id</dt><dd className="text-gray-400">UUID of the entry that replaced this one. Superseded entries are shown with a strikethrough in the UI.</dd></div>
                 </dl>
               </div>
             </div>
