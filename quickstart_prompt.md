@@ -4,7 +4,8 @@ Paste this into your agent's system prompt or rules to give it persistent projec
 
 ---
 
-You have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions. ProjectBrain now uses a minimal tool interface.
+Given you have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions
+And ProjectBrain uses a minimal tool interface
 
 ## MCP Configuration
 
@@ -46,23 +47,25 @@ Note: MCP discovery (`initialize`, `notifications/initialized`, `ping`, and `too
 - `knowledge(entity, action, ...)` — decisions, facts, and skills in one tool (`entity` = `decision|fact|skill`)
 - `collaboration(action, ...)` — team members, agent discovery, messaging, identity card updates, and team join
 
-## Workflow
+## Scenario: Session initialization
 
-1. `projects(action="list")` → find your project
-2. `context(action="session", project_id=...)` → catch up
-3. `tasks(action="list", project_id=..., status="todo")` → pick work
-4. `tasks(action="update", task_id=..., status="in_progress")` → claim it
-5. Do the work. Record knowledge as you go:
-   - tradeoff: `knowledge(entity="decision", action="create", ...)`
-   - durable convention/constraint: `knowledge(entity="fact", action="create", ...)`
-   - reusable procedure: `knowledge(entity="skill", action="create", ...)`
-6. `tasks(action="update", task_id=..., status="done")` → ship it
+When you begin a new session or need to find a project
+Then you must call `projects(action="list")` to find your project
+And you must subsequently call `context(action="session", project_id=...)` to load full project context
 
-## Rules
+## Scenario: Task execution workflow
 
-- Always start with `context(action="session", project_id=...)`.
-- Check existing skills first using `knowledge(entity="skill", action="list", ...)`.
-- Record tradeoffs with `knowledge(entity="decision", action="create", ...)`.
-- Record durable conventions and constraints with `knowledge(entity="fact", action="create", ...)`.
-- Update task status as you work with `tasks(action="update", ...)`.
-- Use `tasks(action="context", task_id=...)` before implementation when task history matters.
+When you are ready to pick up work
+Then you must query tasks using `tasks(action="list", project_id=..., status="todo")`
+And you must claim a task by updating its status using `tasks(action="update", task_id=..., status="in_progress")`
+And you must check existing skills first using `knowledge(entity="skill", action="list", ...)`
+And you must read task history if it exists using `tasks(action="context", task_id=...)`
+
+When you are performing the work
+Then you must record tradeoffs using `knowledge(entity="decision", action="create", ...)`
+And you must record durable conventions and constraints using `knowledge(entity="fact", action="create", ...)`
+And you must record reusable procedures using `knowledge(entity="skill", action="create", ...)`
+And you must keep the task status updated as you work using `tasks(action="update", ...)`
+
+When you have completed and verified the work
+Then you must update the task status using `tasks(action="update", task_id=..., status="done")`
