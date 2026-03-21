@@ -12,6 +12,7 @@ const SECTIONS = [
   { id: "claude-code-skill", label: "Claude Code Skill" },
   { id: "tools", label: "MCP Tools Reference" },
   { id: "workflow", label: "Agent Workflow" },
+  { id: "gherkin-style", label: "Gherkin-style Prompts" },
   { id: "curation", label: "Memory Curation" },
   { id: "system-prompt", label: "System Prompt" },
 ] as const;
@@ -27,7 +28,7 @@ function CopyButton({ text }: { text: string }) {
           setTimeout(() => setCopied(false), 2000);
         });
       }}
-      className="rounded-lg border border-gray-700 px-3 py-1 text-xs text-gray-400 transition hover:border-accent hover:text-white"
+      className="rounded-lg border border-[#2A2722] px-3 py-1 text-xs text-[#D4C5B0] transition hover:border-accent hover:text-[#F0E6D2] bg-[#141311]"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -37,9 +38,9 @@ function CopyButton({ text }: { text: string }) {
 /* ── Code block ── */
 function Code({ children, copyable, wrap }: { children: string; copyable?: boolean; wrap?: boolean }) {
   return (
-    <div className="rounded-lg bg-gray-950 font-mono text-sm leading-relaxed text-gray-300">
+    <div className="rounded-xl border border-[#2A2722] bg-[#0A0A0B] font-mono text-sm leading-relaxed text-[#D4C5B0] shadow-inner">
       {copyable && (
-        <div className="flex justify-end border-b border-gray-800 px-4 py-2">
+        <div className="flex justify-end border-b border-[#2A2722] px-4 py-2">
           <CopyButton text={children} />
         </div>
       )}
@@ -62,7 +63,8 @@ const MCP_CONFIG = `{
 }`;
 
 /* ── System prompt ── */
-const SYSTEM_PROMPT = `You have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions.
+const SYSTEM_PROMPT = `Given you have access to ProjectBrain via MCP — a persistent, structured project backend that remembers context across sessions
+And ProjectBrain uses a minimal tool interface
 
 MCP Configuration:
 {
@@ -77,68 +79,79 @@ MCP Configuration:
   }
 }
 
-ProjectBrain uses a minimal tool interface:
-- context(action, ...) — orientation/discovery (session, summary, changes, search)
+Core Tools:
+- context(action, ...) — orientation/discovery (session, summary, changes, search, shortlist)
 - projects(action, ...) — project CRUD (list, get, create, update)
-- tasks(action, ...) — task lifecycle, batch ops, dependencies, comments, and advanced list filters (q_any/q_all/q_not)
-- knowledge(entity, action, ...) — decisions, facts, skills
+- tasks(action, ...) — task lifecycle, batch ops, dependencies, comments, and milestones
+- knowledge(entity, action, ...) — decisions, facts, and skills (entity = decision|fact|skill)
 - collaboration(action, ...) — team members, messaging, identity card, join team
 - files(action, ...) — versioned documents: drafts, specs, reports, reviews, code linked to tasks/milestones
 
-Workflow:
-1. projects(action="list") → identify the project
-2. context(action="session", project_id=...) → orient with current context
-3. tasks(action="list", project_id=..., status="todo") → pick work
-4. tasks(action="update", task_id=..., status="in_progress") → claim it
-5. Do the work and record knowledge:
-   - tradeoff → knowledge(entity="decision", action="create", ...)
-   - durable rule/constraint → knowledge(entity="fact", action="create", ...)
-   - reusable procedure → knowledge(entity="skill", action="create", ...)
-   - task note → tasks(action="add_comment", task_id=..., comment_body=...)
-6. tasks(action="update", task_id=..., status="done") → ship it
+Scenario: Session initialization
+When you begin a new session or need to find a project
+Then you must call projects(action="list") to find your project
+And you must subsequently call context(action="session", project_id=...) to load full project context
 
-Rules:
-- Always start with context(action="session", project_id=...).
-- Check existing reusable guidance first with knowledge(entity="skill", action="list", ...).
-- Use tasks(action="context", task_id=...) before implementation when task history matters.
-- Keep task status up to date throughout execution.
-- Use context(action="changes", project_id=..., since=...) to catch up after time away.`;
+Scenario: Task execution workflow
+When you are ready to pick up work
+Then you must query tasks using tasks(action="list", project_id=..., status="todo")
+And you must claim a task by updating its status using tasks(action="update", task_id=..., status="in_progress")
+And you must check existing skills first using knowledge(entity="skill", action="list", ...)
+And you must read task history if it exists using tasks(action="context", task_id=...)
+
+When you are performing the work
+Then you must record tradeoffs using knowledge(entity="decision", action="create", ...)
+And you must record durable conventions and constraints using knowledge(entity="fact", action="create", ...)
+And you must record reusable procedures using knowledge(entity="skill", action="create", ...)
+And you must keep the task status updated as you work using tasks(action="update", ...)
+
+When you have completed and verified the work
+Then you must update the task status using tasks(action="update", task_id=..., status="done")`;
 
 /* ── Tool groups ── */
 const TOOL_GROUPS = [
   { group: "Context", tools: [
-    ["context(action=\"session\", project_id)", "Start here — full project context for the current session"],
+    ["context(action=\"session\", project_id)", "Start here — full project context (tasks, decisions, facts, skills, team)"],
     ["context(action=\"summary\", project_id)", "Project status and milestone snapshot"],
-    ["context(action=\"changes\", project_id, since)", "Grouped changes since an ISO timestamp"],
-    ["context(action=\"search\", project_id, q, limit?)", "Cross-entity search across tasks, decisions, facts, and skills"],
+    ["context(action=\"changes\", project_id, since)", "Grouped audit changes since an ISO timestamp"],
+    ["context(action=\"search\", project_id, q, limit?)", "Cross-entity semantic search"],
+    ["context(action=\"shortlist\", q, limit?, full_tool_mode?)", "Intent-aware top-k tool-action shortlist"],
   ]},
   { group: "Projects", tools: [
-    ["projects(action, project_id?, name?, description?)", "Create, list, inspect, and update projects"],
+    ["projects(action, project_id?, name?, description?)", "Project CRUD: list, get, create, update"],
   ]},
   { group: "Tasks", tools: [
-    ["tasks(action=\\\"list\\\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)", "List tasks with status/text filters and optional JSON output"],
-    ["tasks(action=\"create\", project_id, title, ...)", "Create a task with optional priority/estimate/linkage fields"],
-    ["tasks(action=\"update\", task_id, ...)", "Update task status, priority, assignment, or description"],
-    ["tasks(action=\"context\", task_id)", "Task details plus linked decisions"],
-    ["tasks(action=\"batch_create\", project_id, items=[{title, ...}, ...])", "Create multiple tasks in one request"],
-    ["tasks(action=\"batch_update\", updates=[{id, ...}, ...])", "Bulk update multiple tasks in one request"],
+    ["tasks(action=\"list\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)", "List tasks with advanced filters and optional JSON output"],
+    ["tasks(action=\"create\", project_id, title, ...)", "Create a task with optional priority/estimate/milestone/assignee"],
+    ["tasks(action=\"update\", task_id, ...)", "Update task lifecycle: status, priority, description, or metadata"],
+    ["tasks(action=\"context\", task_id)", "Task details, comments, dependencies, and linked decisions"],
+    ["tasks(action=\"batch_create\", project_id, items=[{title, ...}, ...])", "Create multiple tasks in one request (requires items[].title)"],
+    ["tasks(action=\"batch_update\", updates=[{id, ...}, ...])", "Bulk update multiple tasks in one request (requires updates[].id)"],
     ["tasks(action=\"add_comment\", task_id, comment_body)", "Post a comment on a task"],
     ["tasks(action=\"add_dependency\", task_id, depends_on_id)", "Block a task on another task"],
-    ["tasks(action=\"delete\", task_id)", "Delete a task and clean references"],
+    ["tasks(action=\"delete\", task_id)", "Delete a task and its references"],
+  ]},
+  { group: "Milestones", tools: [
+    ["tasks(action=\"list_milestones\", project_id)", "List delivery milestones for a project"],
+    ["tasks(action=\"get_milestone\", milestone_id)", "Get milestone details and progress"],
+    ["tasks(action=\"create_milestone\", project_id, title, status?)", "Create a new milestone"],
+    ["tasks(action=\"update_milestone\", milestone_id, title?, status?)", "Update milestone details"],
+    ["tasks(action=\"delete_milestone\", milestone_id)", "Delete a milestone"],
+    ["tasks(action=\"reorder_milestones\", project_id, milestone_ids=[])", "Change the sort order of milestones"],
   ]},
   { group: "Knowledge", tools: [
-    ["knowledge(entity, action, ...)", "Manage decisions, facts, and skills in one interface"],
-  ]},
-  { group: "Collaboration", tools: [
-    ["collaboration(action, ...)", "Team members, agent discovery, messaging, and identity operations"],
+    ["knowledge(entity, action, ...)", "Manage decisions, facts, and skills (entity = decision|fact|skill)"],
   ]},
   { group: "Files", tools: [
-    ["files(action=\"list\", project_id, file_type?)", "List versioned files for a project"],
-    ["files(action=\"get\", file_id, version?)", "Get a file — latest version or a specific version number"],
-    ["files(action=\"create\", project_id, title, file_type, body, entity_type?, entity_id?)", "Create a new versioned file linked to a project or entity"],
+    ["files(action=\"list\", project_id, file_type?)", "List versioned documents (draft, spec, report, review, code)"],
+    ["files(action=\"get\", file_id, version?)", "Get latest or specific version of a file"],
+    ["files(action=\"create\", project_id, title, file_type, body, ...)", "Create a new versioned file linked to a project or entity"],
     ["files(action=\"add_version\", file_id, body)", "Append a new version to an existing file"],
-    ["files(action=\"list_versions\", file_id)", "List all versions of a file"],
-    ["files(action=\"delete\", file_id)", "Delete a file and all its versions"],
+    ["files(action=\"list_versions\", file_id)", "List version history for a file"],
+    ["files(action=\"delete\", file_id)", "Permanently delete a file"],
+  ]},
+  { group: "Collaboration", tools: [
+    ["collaboration(action, ...)", "Team members, agent discovery, and messaging"],
   ]},
 ];
 type ToolParam = {
@@ -149,150 +162,66 @@ type ToolParam = {
 
 const TOOL_PARAM_DETAILS_OVERRIDES: Record<string, ToolParam[]> = {
   "context(action=\"session\", project_id)": [
-    { name: "action", description: "Use the literal value \"session\"." },
-    { name: "project_id", description: "UUID of the project to load context for." },
+    { name: "action", description: "Literal value \"session\"." },
+    { name: "project_id", description: "UUID of the project." },
   ],
   "context(action=\"summary\", project_id)": [
-    { name: "action", description: "Use the literal value \"summary\"." },
-    { name: "project_id", description: "UUID of the project to summarize." },
+    { name: "action", description: "Literal value \"summary\"." },
+    { name: "project_id", description: "UUID of the project." },
   ],
   "context(action=\"changes\", project_id, since)": [
-    { name: "action", description: "Use the literal value \"changes\"." },
-    { name: "project_id", description: "UUID of the project to inspect." },
-    { name: "since", description: "ISO timestamp lower-bound for returned changes." },
+    { name: "action", description: "Literal value \"changes\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "since", description: "ISO-8601 timestamp (e.g., 2026-03-21T00:00:00Z)." },
   ],
   "context(action=\"search\", project_id, q, limit?)": [
-    { name: "action", description: "Use the literal value \"search\"." },
-    { name: "project_id", description: "UUID of the project to search within." },
-    { name: "q", description: "Search query across tasks, decisions, facts, and skills." },
-    { name: "limit", optional: true, description: "Per-entity result limit (default 5, max 20)." },
-  ],
-  "projects(action, project_id?, name?, description?)": [
-    { name: "action", description: "One of: list, get, create, update." },
-    { name: "project_id", optional: true, description: "Required for get/update actions." },
-    { name: "name", optional: true, description: "Project name (required for create)." },
-    { name: "description", optional: true, description: "Project description." },
-  ],
-  "tasks(action=\\\"list\\\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)": [
-    { name: "action", description: "Use the literal value \"list\"." },
+    { name: "action", description: "Literal value \"search\"." },
     { name: "project_id", description: "UUID of the project." },
-    { name: "status", optional: true, description: "Task status filter (todo, in_progress, blocked, done, cancelled)." },
-    { name: "q", optional: true, description: "Text search on task title/description." },
-    { name: "q_any", optional: true, description: "OR terms: task matches if any provided term matches." },
-    { name: "q_all", optional: true, description: "AND terms: task must match every provided term." },
-    { name: "q_not", optional: true, description: "Exclusion terms: task must not match any provided term." },
-    { name: "response_mode", optional: true, description: "Output format: human, json, or both." },
+    { name: "q", description: "Search query string." },
+    { name: "limit", optional: true, description: "Results per entity type (default 5)." },
+  ],
+  "context(action=\"shortlist\", q, limit?, full_tool_mode?)": [
+    { name: "action", description: "Literal value \"shortlist\"." },
+    { name: "q", description: "Natural language intent query." },
+    { name: "limit", optional: true, description: "Number of ranked operations to return." },
+    { name: "full_tool_mode", optional: true, description: "Return full tool definitions if true." },
+  ],
+  "tasks(action=\"list\", project_id, status?, q?, q_any?, q_all?, q_not?, response_mode?)": [
+    { name: "action", description: "Literal value \"list\"." },
+    { name: "project_id", description: "UUID of the project." },
+    { name: "status", optional: true, description: "Filter by status: todo, in_progress, blocked, done, cancelled." },
+    { name: "q", optional: true, description: "Text search on title/description." },
+    { name: "q_any", optional: true, description: "Matches if ANY provided term matches." },
+    { name: "q_all", optional: true, description: "Matches if ALL provided terms match." },
+    { name: "q_not", optional: true, description: "Excludes tasks matching any provided term." },
+    { name: "response_mode", optional: true, description: "human | json | both." },
   ],
   "tasks(action=\"create\", project_id, title, ...)": [
-    { name: "action", description: "Use the literal value \"create\"." },
+    { name: "action", description: "Literal value \"create\"." },
     { name: "project_id", description: "UUID of the project." },
     { name: "title", description: "Task title." },
-    { name: "description", optional: true, description: "Task description." },
-    { name: "status", optional: true, description: "Initial task status." },
-    { name: "priority", optional: true, description: "Priority label." },
-    { name: "estimate", optional: true, description: "Estimated effort." },
-    { name: "sort_order", optional: true, description: "Ordering index." },
-    { name: "milestone_id", optional: true, description: "Milestone UUID or empty string to clear." },
-    { name: "assignee_id", optional: true, description: "Assignee UUID or empty string to clear." },
-  ],
-  "tasks(action=\"update\", task_id, ...)": [
-    { name: "action", description: "Use the literal value \"update\"." },
-    { name: "task_id", description: "UUID of the task to update." },
-    { name: "title", optional: true, description: "Updated task title." },
-    { name: "description", optional: true, description: "Updated task description." },
-    { name: "status", optional: true, description: "Updated status." },
-    { name: "priority", optional: true, description: "Updated priority." },
-    { name: "estimate", optional: true, description: "Updated estimate." },
-    { name: "sort_order", optional: true, description: "Updated order index." },
-    { name: "milestone_id", optional: true, description: "Updated milestone UUID or empty string to clear." },
-    { name: "assignee_id", optional: true, description: "Updated assignee UUID or empty string to clear." },
-  ],
-  "tasks(action=\"context\", task_id)": [
-    { name: "action", description: "Use the literal value \"context\"." },
-    { name: "task_id", description: "UUID of the task to inspect." },
-  ],
-  "tasks(action=\"batch_create\", project_id, items=[{title, ...}, ...])": [
-    { name: "action", description: "Use the literal value \"batch_create\"." },
-    { name: "project_id", description: "UUID of the project." },
-    { name: "items", description: "Array of task objects; each item requires items[].title." },
-  ],
-  "tasks(action=\"batch_update\", updates=[{id, ...}, ...])": [
-    { name: "action", description: "Use the literal value \"batch_update\"." },
-    { name: "updates", description: "Array of task updates; each item requires updates[].id." },
-  ],
-  "tasks(action=\"add_comment\", task_id, comment_body)": [
-    { name: "action", description: "Use the literal value \"add_comment\"." },
-    { name: "task_id", description: "UUID of the target task." },
-    { name: "comment_body", description: "Comment markdown/text body." },
-  ],
-  "tasks(action=\"add_dependency\", task_id, depends_on_id)": [
-    { name: "action", description: "Use the literal value \"add_dependency\"." },
-    { name: "task_id", description: "UUID of the blocked task." },
-    { name: "depends_on_id", description: "UUID of the prerequisite task." },
-  ],
-  "tasks(action=\"delete\", task_id)": [
-    { name: "action", description: "Use the literal value \"delete\"." },
-    { name: "task_id", description: "UUID of the task to delete." },
+    { name: "priority", optional: true, description: "low, medium, high, urgent." },
+    { name: "estimate", optional: true, description: "Integer estimate (e.g., story points)." },
+    { name: "milestone_id", optional: true, description: "UUID of the linked milestone." },
+    { name: "assignee_id", optional: true, description: "UUID of the assigned agent or user." },
   ],
   "knowledge(entity, action, ...)": [
-    { name: "entity", description: "One of: decision, fact, skill." },
-    { name: "action", description: "One of: list, get, create, update, delete." },
-    { name: "project_id", optional: true, description: "Required for decision/fact list/create, optional for skill." },
+    { name: "entity", description: "decision, fact, or skill." },
+    { name: "action", description: "list, get, create, update, or delete." },
+    { name: "project_id", optional: true, description: "Required for decision/fact list/create." },
     { name: "item_id", optional: true, description: "Required for get/update/delete." },
-    { name: "title", optional: true, description: "Title field used for create/update." },
-    { name: "body", optional: true, description: "Body content (facts and skills)." },
-    { name: "rationale", optional: true, description: "Decision rationale." },
-    { name: "task_id", optional: true, description: "Optional task link for decisions." },
-    { name: "category", optional: true, description: "Category for facts/skills." },
-    { name: "tags", optional: true, description: "Tag list for skills." },
-    { name: "q", optional: true, description: "Text search query for list actions." },
-    { name: "cursor", optional: true, description: "Pagination cursor." },
-    { name: "limit", optional: true, description: "Pagination size." },
+    { name: "title", optional: true, description: "Title field." },
+    { name: "body", optional: true, description: "Markdown body content (facts/skills)." },
+    { name: "rationale", optional: true, description: "Rationale for decisions." },
+    { name: "task_id", optional: true, description: "Linked task for decisions." },
+    { name: "category", optional: true, description: "Category label." },
+    { name: "tags", optional: true, description: "List of skill tags." },
   ],
   "collaboration(action, ...)": [
-    { name: "action", description: "One of: list_team_members, discover_agents, send_message, get_messages, update_my_card, join_team." },
-    { name: "recipient_id", optional: true, description: "Required for send_message." },
-    { name: "body", optional: true, description: "Message body for send_message." },
-    { name: "message_type", optional: true, description: "Message type (defaults to info)." },
-    { name: "subject", optional: true, description: "Optional message subject." },
-    { name: "include_read", optional: true, description: "For get_messages: include already-read messages." },
-    { name: "mark_as_read", optional: true, description: "For get_messages: mark returned unread messages as read." },
-    { name: "description", optional: true, description: "For update_my_card: profile description." },
-    { name: "skills", optional: true, description: "For update_my_card: list of capability tags." },
-    { name: "role", optional: true, description: "For update_my_card: planner/implementer/reviewer/general." },
-    { name: "invite_code", optional: true, description: "For join_team action." },
-  ],
-  "files(action=\"list\", project_id, file_type?)": [
-    { name: "action", description: "Use the literal value \"list\"." },
-    { name: "project_id", description: "UUID of the project." },
-    { name: "file_type", optional: true, description: "Filter by type: draft, spec, report, review, or code." },
-  ],
-  "files(action=\"get\", file_id, version?)": [
-    { name: "action", description: "Use the literal value \"get\"." },
-    { name: "file_id", description: "UUID of the file." },
-    { name: "version", optional: true, description: "Specific version number to retrieve; omit for latest." },
-  ],
-  "files(action=\"create\", project_id, title, file_type, body, entity_type?, entity_id?)": [
-    { name: "action", description: "Use the literal value \"create\"." },
-    { name: "project_id", description: "UUID of the project." },
-    { name: "title", description: "File title." },
-    { name: "file_type", description: "One of: draft, spec, report, review, code." },
-    { name: "body", description: "File content (markdown)." },
-    { name: "entity_type", optional: true, description: "Entity type to link to, e.g. task or milestone." },
-    { name: "entity_id", optional: true, description: "UUID of the linked entity." },
-  ],
-  "files(action=\"add_version\", file_id, body)": [
-    { name: "action", description: "Use the literal value \"add_version\"." },
-    { name: "file_id", description: "UUID of the file to version." },
-    { name: "body", description: "Updated file content (markdown)." },
-  ],
-  "files(action=\"list_versions\", file_id)": [
-    { name: "action", description: "Use the literal value \"list_versions\"." },
-    { name: "file_id", description: "UUID of the file." },
-  ],
-  "files(action=\"delete\", file_id)": [
-    { name: "action", description: "Use the literal value \"delete\"." },
-    { name: "file_id", description: "UUID of the file to delete permanently." },
+    { name: "action", description: "list_team_members, discover_agents, get_agent_activity, send_message, get_messages, update_my_card, join_team." },
+    { name: "recipient_id", optional: true, description: "Target UUID for send_message." },
+    { name: "body", optional: true, description: "Message or profile body." },
+    { name: "since", optional: true, description: "Activity filter timestamp." },
   ],
 };
 
@@ -352,27 +281,25 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen font-sans">
+    <div className="min-h-screen font-sans selection:bg-[#B09E80] selection:text-[#0A0A0B]">
       {/* Top bar */}
-      <header className="sticky top-0 z-20 border-b border-gray-800 bg-gray-950/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href={MARKETING_URL} className="flex items-center gap-2 font-mono text-lg font-bold text-white">
-            <img src="/favicon.svg" alt="ProjectBrain" className="h-6 w-6" />
+      <header className="sticky top-0 z-20 border-b border-[#2A2722] bg-[#0A0A0B]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <a href={MARKETING_URL} className="flex items-center gap-3 font-display text-xl font-medium text-[#F0E6D2]">
+            <img src="/favicon.svg" alt="ProjectBrain" className="h-7 w-7 filter sepia-[0.5] saturate-50" />
             Docs
           </a>
-          <div className="flex items-center gap-4">
-            <a href={EDIT_THIS_PAGE_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Edit this page</a>
-            <a href={CONTRIBUTING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Contributing</a>
-            <a href={BLOG_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Blog</a>
-            <a href={APP_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Open App</a>
-            <a href={MARKETING_URL} className="hidden text-sm text-gray-400 hover:text-white sm:block">Home</a>
+          <div className="flex items-center gap-6">
+            <a href={MARKETING_URL} className="hidden text-sm text-[#D4C5B0] opacity-60 hover:opacity-100 transition-opacity sm:block">Home</a>
+            <a href={BLOG_URL} className="hidden text-sm text-[#D4C5B0] opacity-60 hover:opacity-100 transition-opacity sm:block">Blog</a>
+            <a href={APP_URL} className="hidden rounded-lg bg-[#B09E80] px-4 py-2 text-sm font-semibold text-[#0A0A0B] hover:bg-[#D4C5B0] transition-colors sm:block">Open App</a>
             {/* Mobile menu toggle */}
             <button
-              className="rounded-md p-2 text-gray-400 hover:text-white sm:hidden"
+              className="rounded-md p-2 text-[#D4C5B0] hover:text-[#F0E6D2] sm:hidden"
               onClick={() => setMobileNavOpen((o) => !o)}
               aria-label="Toggle nav"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {mobileNavOpen
                   ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -383,18 +310,18 @@ export default function App() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-6xl">
+      <div className="mx-auto flex max-w-7xl">
         {/* Sidebar — desktop */}
-        <aside className="sticky top-[65px] hidden h-[calc(100vh-65px)] w-56 shrink-0 overflow-y-auto border-r border-gray-800 py-8 pr-4 pl-6 sm:block">
+        <aside className="sticky top-[69px] hidden h-[calc(100vh-69px)] w-64 shrink-0 overflow-y-auto border-r border-[#2A2722] py-10 pr-4 pl-6 sm:block">
           <nav className="space-y-1">
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
                 onClick={() => scrollTo(s.id)}
-                className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                className={`block w-full rounded-lg px-4 py-2.5 text-left text-sm transition-all ${
                   active === s.id
-                    ? "bg-accent/15 font-semibold text-accent-light"
-                    : "text-gray-400 hover:bg-gray-900 hover:text-white"
+                    ? "bg-[#B09E80]/10 font-semibold text-[#F0E6D2] border border-[#B09E80]/20"
+                    : "text-[#D4C5B0] opacity-60 hover:opacity-100 hover:bg-[#141311]"
                 }`}
               >
                 {s.label}
@@ -405,122 +332,114 @@ export default function App() {
 
         {/* Mobile nav dropdown */}
         {mobileNavOpen && (
-          <div className="fixed inset-x-0 top-[57px] z-10 border-b border-gray-800 bg-gray-950 px-6 py-4 sm:hidden">
+          <div className="fixed inset-x-0 top-[69px] z-10 border-b border-[#2A2722] bg-[#0A0A0B] px-6 py-6 sm:hidden">
             <nav className="space-y-1">
               {SECTIONS.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => scrollTo(s.id)}
-                  className={`block w-full rounded-lg px-3 py-2 text-left text-sm ${
-                    active === s.id ? "bg-accent/15 font-semibold text-accent-light" : "text-gray-400"
+                  className={`block w-full rounded-lg px-4 py-3 text-left text-base ${
+                    active === s.id ? "bg-[#B09E80]/10 font-semibold text-[#F0E6D2]" : "text-[#D4C5B0] opacity-60"
                   }`}
                 >
                   {s.label}
                 </button>
               ))}
-              <div className="mt-3 flex gap-3 border-t border-gray-800 pt-3">
-                <a href={EDIT_THIS_PAGE_URL} className="text-sm text-gray-400 hover:text-white">Edit this page</a>
-                <a href={CONTRIBUTING_URL} className="text-sm text-gray-400 hover:text-white">Contributing</a>
-                <a href={BLOG_URL} className="text-sm text-gray-400 hover:text-white">Blog</a>
-                <a href={APP_URL} className="text-sm text-gray-400 hover:text-white">Open App</a>
-                <a href={MARKETING_URL} className="text-sm text-gray-400 hover:text-white">Home</a>
+              <div className="mt-6 flex flex-col gap-4 border-t border-[#2A2722] pt-6">
+                <a href={MARKETING_URL} className="text-base text-[#D4C5B0] opacity-60">Home</a>
+                <a href={BLOG_URL} className="text-base text-[#D4C5B0] opacity-60">Blog</a>
+                <a href={APP_URL} className="rounded-lg bg-[#B09E80] py-3 text-center text-base font-semibold text-[#0A0A0B]">Open App</a>
               </div>
             </nav>
           </div>
         )}
 
         {/* Content */}
-        <main className="min-w-0 flex-1 px-6 py-10 sm:px-10">
+        <main className="min-w-0 flex-1 px-6 py-12 sm:px-12 lg:px-16 animate-fade-up">
 
           {/* ── Getting Started ── */}
-          <section id="getting-started" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">Getting Started</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
-            </p>
-            <p className="mt-4 text-gray-400">
+          <section id="getting-started" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Getting Started</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
               Connect your AI agent to ProjectBrain in under a minute. You&apos;ll need a free account and an API key.
             </p>
 
-            <div className="mt-8 space-y-8">
-              <div>
-                <h3 className="font-semibold text-white">1. Create an account</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  Sign in at <a href={APP_URL} className="text-accent-light hover:underline">{APP_URL}</a> using
+            <div className="mt-12 space-y-12">
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">1. Create an account</h3>
+                <p className="mt-3 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  Sign in at <a href={APP_URL} className="text-[#B09E80] hover:underline transition-colors">{APP_URL}</a> using
                   GitHub or Google. A personal team is created automatically.
                 </p>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-white">2. Create an agent &amp; get an API key</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  Go to <strong className="text-gray-300">Team Settings → Add Agent</strong>. Give it a name,
-                  then copy the <code className="text-accent-light">pb_...</code> API key. It&apos;s shown once — save it securely.
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">2. Create an agent &amp; get an API key</h3>
+                <p className="mt-3 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  Go to <strong className="text-[#F0E6D2]">Team Settings → Add Agent</strong>. Give it a name,
+                  then copy the <code className="text-[#B09E80] bg-[#B09E80]/10 px-1.5 py-0.5 rounded font-mono">pb_...</code> API key. It&apos;s shown once — save it securely.
                 </p>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-white">3. Add to your MCP config</h3>
-                <p className="mt-2 mb-3 text-sm text-gray-400">
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">3. Add to your MCP config</h3>
+                <p className="mt-3 mb-5 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
                   Add this to your agent&apos;s MCP server configuration (works with Warp, Cursor, Claude Code, or any MCP client):
                 </p>
                 <Code copyable>{MCP_CONFIG}</Code>
-                <p className="mt-2 text-sm text-gray-400">
-                  Replace <code className="text-accent-light">pb_YOUR_API_KEY</code> with your actual key.
+                <p className="mt-4 text-[#D4C5B0] opacity-50 text-sm font-sans italic">
+                  Replace <code className="text-[#B09E80]">pb_YOUR_API_KEY</code> with your actual key.
                 </p>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-white">4. Start your agent</h3>
-                <p className="mt-2 text-sm text-gray-400">
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">4. Start your agent</h3>
+                <p className="mt-3 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
                   Your agent now has persistent project memory. It should call{" "}
-                  <code className="text-accent-light">context(action=&quot;session&quot;, project_id=...)</code> at the start of every session to orient itself.
+                  <code className="text-[#B09E80] bg-[#B09E80]/10 px-1.5 py-0.5 rounded font-mono">context(action=&quot;session&quot;, project_id=...)</code> at the start of every session to orient itself.
                 </p>
               </div>
             </div>
           </section>
 
           {/* ── Claude Code Skill ── */}
-          <section id="claude-code-skill" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">Claude Code Skill</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
-            </p>
-            <p className="mt-4 text-gray-400">
+          <section id="claude-code-skill" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Claude Code Skill</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
               The official Claude Code skill gives Claude deep, built-in knowledge of Project Brain workflows,
               tool APIs, and knowledge-capture patterns — without pasting a system prompt.
             </p>
 
-            <div className="mt-8 space-y-8">
+            <div className="mt-12 space-y-12">
               <div>
-                <h3 className="font-semibold text-white">Install</h3>
-                <p className="mt-2 mb-3 text-sm text-gray-400">
-                  Run this once to install the skill globally for Claude Code:
-                </p>
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2] mb-4">Install</h3>
                 <Code copyable>npx skills add project-brain-skill -g -y</Code>
               </div>
 
-              <div>
-                <h3 className="font-semibold text-white">What the skill does</h3>
-                <p className="mt-2 text-sm text-gray-400">
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8 shadow-xl">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2] mb-6">What the skill does</h3>
+                <p className="text-[#D4C5B0] opacity-70 mb-6 font-sans">
                   Once installed, Claude Code automatically loads the skill when you mention Project Brain or any of its tools.
-                  It provides:
                 </p>
-                <ul className="mt-3 space-y-2 text-sm text-gray-400">
-                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Session start workflow</strong> — reminds Claude to call <code className="text-accent-light">context(action="session")</code> before acting</span></li>
-                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Proactive knowledge logging</strong> — guidance on when and how to create facts, decisions, and skills without being asked</span></li>
-                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Complete tool API reference</strong> — all six MCP tools with every action and parameter, loaded on demand</span></li>
-                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Knowledge quality patterns</strong> — examples of good vs. bad entries, anti-patterns, and when to update vs. create new</span></li>
-                  <li className="flex gap-2"><span className="text-accent-light shrink-0">→</span><span><strong className="text-gray-300">Agent handoff workflow</strong> — how to leave clean state when handing off to another agent</span></li>
+                <ul className="space-y-4">
+                  {[
+                    { label: "Session start workflow", desc: "reminds Claude to call context(action=\"session\") before acting" },
+                    { label: "Proactive knowledge logging", desc: "guidance on when and how to create facts, decisions, and skills" },
+                    { label: "Complete tool API reference", desc: "all six MCP tools with every action and parameter" },
+                    { label: "Knowledge quality patterns", desc: "examples of good vs. bad entries and anti-patterns" },
+                    { label: "Agent handoff workflow", desc: "how to leave clean state when handing off to another agent" },
+                  ].map((item) => (
+                    <li key={item.label} className="flex gap-4 items-start">
+                      <span className="text-[#B09E80] mt-1 shrink-0">→</span>
+                      <span className="text-[#D4C5B0] leading-relaxed font-sans"><strong className="text-[#F0E6D2] font-medium">{item.label}</strong> — {item.desc}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="font-semibold text-white">Trigger phrases</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  The skill activates automatically when you say things like:
-                </p>
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2] mb-6">Trigger phrases</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {[
                     "log this to project brain",
                     "check the knowledge base",
@@ -531,39 +450,27 @@ export default function App() {
                     "send a message to an agent",
                     "check my inbox",
                   ].map((phrase) => (
-                    <div key={phrase} className="rounded-md border border-gray-800 bg-gray-900/50 px-3 py-2 font-mono text-xs text-gray-400">
+                    <div key={phrase} className="rounded-xl border border-[#2A2722] bg-[#0A0A0B] px-5 py-3 font-mono text-sm text-[#D4C5B0] opacity-60">
                       &ldquo;{phrase}&rdquo;
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div>
-                <h3 className="font-semibold text-white">Without the skill</h3>
-                <p className="mt-2 text-sm text-gray-400">
-                  If you&apos;re not using Claude Code, paste the <a href="#system-prompt" onClick={() => scrollTo("system-prompt")} className="text-accent-light hover:underline">system prompt</a> into your agent&apos;s rules file instead.
-                  It covers the same core workflow.
-                </p>
-              </div>
             </div>
           </section>
 
           {/* ── Tools Reference ── */}
-          <section id="tools" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">MCP Tools Reference</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
-            </p>
-            <p className="mt-4 text-gray-400">
+          <section id="tools" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">MCP Tools Reference</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
               All tools available to your agent via MCP, grouped by category.
-              Use your MCP client&apos;s tool listing to see the full schema for each.
             </p>
 
-            <div className="mt-8 space-y-8">
+            <div className="mt-12 space-y-12">
               {TOOL_GROUPS.map(({ group, tools }) => (
-                <div key={group}>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">{group}</h3>
-                  <div className="space-y-2">
+                <div key={group} className="relative">
+                  <h3 className="mb-6 text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#B09E80] opacity-50">{group}</h3>
+                  <div className="space-y-4">
                     {tools.map(([tool, desc]) => {
                       const params = resolveToolParams(tool);
                       const isExpanded = !!expandedToolParams[tool];
@@ -571,36 +478,39 @@ export default function App() {
                       const toolLabel = formatToolLabel(tool);
 
                       return (
-                        <div key={tool} className="rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3">
-                          <div className="space-y-3">
-                            <div className="overflow-x-auto rounded-md border border-gray-800/80 bg-gray-950/60 px-3 py-2">
-                              <code className="font-mono text-sm leading-relaxed text-accent-light whitespace-pre-wrap break-words">{toolLabel}</code>
+                        <div key={tool} className="rounded-2xl border border-[#2A2722] bg-[#141311] shadow-lg transition-all hover:border-[#B09E80]/20">
+                          <div className="p-6">
+                            <div className="mb-4 overflow-x-auto rounded-xl border border-[#2A2722] bg-[#0A0A0B] p-4">
+                              <code className="font-mono text-sm leading-relaxed text-[#B09E80] whitespace-pre-wrap break-words">{toolLabel}</code>
                             </div>
-                            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                              <span className="min-w-0 text-sm text-gray-500">{desc}</span>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                              <span className="text-[#D4C5B0] opacity-70 font-sans">{desc}</span>
                               {hasParams && (
                                 <button
                                   type="button"
                                   onClick={() => toggleToolParams(tool)}
-                                  className="w-fit shrink-0 rounded border border-gray-700 px-2 py-1 text-xs text-gray-400 transition hover:border-accent hover:text-white"
+                                  className="w-fit shrink-0 rounded-lg border border-[#2A2722] px-4 py-2 text-xs font-semibold text-[#D4C5B0] transition-all hover:border-[#B09E80]/50 hover:bg-[#B09E80]/5"
                                 >
-                                  {isExpanded ? "Hide params" : "Show params"}
+                                  {isExpanded ? "Hide parameters" : "Show parameters"}
                                 </button>
                               )}
                             </div>
                           </div>
                           {hasParams && isExpanded && (
-                            <div className="mt-3 rounded-md border border-gray-800/80 bg-gray-950/50 p-3">
-                              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Parameters</p>
-                              <ul className="space-y-1 text-sm text-gray-400">
+                            <div className="border-t border-[#2A2722] bg-[#0A0A0B]/50 p-6 rounded-b-2xl">
+                              <p className="mb-4 text-xs font-mono font-bold uppercase tracking-widest text-[#B09E80] opacity-40">Parameters</p>
+                              <div className="grid gap-4">
                                 {params.map((param) => (
-                                  <li key={param.name}>
-                                    <code className="text-gray-300">{param.name}{param.optional ? "?" : ""}</code>
-                                    {" — "}
-                                    {param.description}
-                                  </li>
+                                  <div key={param.name} className="flex flex-col sm:flex-row sm:gap-6 border-b border-[#2A2722]/50 pb-4 last:border-0 last:pb-0">
+                                    <code className="w-48 shrink-0 text-sm font-mono font-bold text-[#F0E6D2]">
+                                      {param.name}{param.optional ? "?" : ""}
+                                    </code>
+                                    <span className="text-sm text-[#D4C5B0] opacity-60 font-sans leading-relaxed">
+                                      {param.description}
+                                    </span>
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -613,170 +523,142 @@ export default function App() {
           </section>
 
           {/* ── Workflow ── */}
-          <section id="workflow" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">Agent Workflow</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
-            </p>
-            <p className="mt-4 text-gray-400">
+          <section id="workflow" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Agent Workflow</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
               The recommended workflow for agents using ProjectBrain. Follow these steps every session.
             </p>
 
-            <div className="mt-8 space-y-6">
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Session Loop</h3>
-                <ol className="space-y-3 text-sm text-gray-400">
-                  <li className="flex gap-3">
-                    <span className="shrink-0 font-mono text-gray-600">1.</span>
-                    <span><code className="text-gray-300">context(action=&quot;session&quot;, project_id)</code> — orient yourself: tasks, decisions, facts, skills, team</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 font-mono text-gray-600">2.</span>
-                    <span><code className="text-gray-300">tasks(action=&quot;list&quot;, project_id, status=&quot;todo&quot;)</code> — pick work</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 font-mono text-gray-600">3.</span>
-                    <span><code className="text-gray-300">tasks(action=&quot;update&quot;, task_id, status=&quot;in_progress&quot;)</code> — claim it</span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 font-mono text-gray-600">4.</span>
-                    <span>Do the work. Record knowledge as you go:
-                      <ul className="ml-4 mt-2 space-y-1">
-                        <li>Tradeoff? → <code className="text-gray-300">knowledge(entity=&quot;decision&quot;, action=&quot;create&quot;, ...)</code></li>
-                        <li>Convention/constraint? → <code className="text-gray-300">knowledge(entity=&quot;fact&quot;, action=&quot;create&quot;, ...)</code></li>
-                        <li>Reusable workflow? → <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;create&quot;, ...)</code></li>
-                        <li>Note on a task? → <code className="text-gray-300">tasks(action=&quot;add_comment&quot;, task_id, comment_body)</code></li>
-                      </ul>
-                    </span>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="shrink-0 font-mono text-gray-600">5.</span>
-                    <span><code className="text-gray-300">tasks(action=&quot;update&quot;, task_id, status=&quot;done&quot;)</code> — ship it</span>
-                  </li>
-                </ol>
+            <div className="mt-12 space-y-8">
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-10 shadow-xl">
+                <h3 className="mb-8 font-mono text-sm font-bold uppercase tracking-widest text-[#B09E80] opacity-60">The Session Loop</h3>
+                <div className="space-y-10">
+                  {[
+                    { step: "1", code: 'context(action="session", project_id)', desc: "orient yourself: tasks, decisions, facts, skills, and team." },
+                    { step: "2", code: 'tasks(action="list", status="todo")', desc: "pick work from the backlog." },
+                    { step: "3", code: 'tasks(action="update", status="in_progress")', desc: "claim the task and notify the team." },
+                    { step: "4", code: 'knowledge(entity="...", action="create")', desc: "record tradeoffs, facts, and skills as you discover them." },
+                    { step: "5", code: 'tasks(action="update", status="done")', desc: "verify changes and ship the work." },
+                  ].map((item) => (
+                    <div key={item.step} className="flex gap-6">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B09E80]/10 border border-[#B09E80]/20 font-mono text-sm font-bold text-[#B09E80]">
+                        {item.step}
+                      </div>
+                      <div>
+                        <code className="block mb-2 font-mono text-base text-[#F0E6D2]">{item.code}</code>
+                        <p className="text-[#D4C5B0] opacity-70 font-sans">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Rules</h3>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li>• Always call <code className="text-gray-300">context(action=&quot;session&quot;, project_id)</code> at the start of every session.</li>
-                  <li>• Check <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;list&quot;, ...)</code> before starting unfamiliar work.</li>
-                  <li>• Read project facts — they contain conventions and constraints you must follow.</li>
-                  <li>• Record decisions as tradeoffs. If there&apos;s no &quot;why not X?&quot;, it&apos;s a fact, not a decision.</li>
-                  <li>• When you figure out a reusable workflow, publish it with <code className="text-gray-300">knowledge(entity=&quot;skill&quot;, action=&quot;create&quot;, ...)</code>.</li>
-                  <li>• Update task status as you work. Don&apos;t leave tasks stuck in &quot;todo&quot;.</li>
-                  <li>• Use <code className="text-gray-300">tasks(action=&quot;context&quot;, task_id)</code> before starting a task to see prior decisions.</li>
-                </ul>
-              </div>
-
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Entities</h3>
-                <dl className="space-y-3 text-sm">
-                  <div><dt className="font-semibold text-white">Tasks</dt><dd className="text-gray-400">Units of work: todo → in_progress → done/blocked. Assigned to agents or humans.</dd></div>
-                  <div><dt className="font-semibold text-white">Decisions</dt><dd className="text-gray-400">Tradeoff records: &quot;why this and not that?&quot; Always include rationale + task_id.</dd></div>
-                  <div><dt className="font-semibold text-white">Facts</dt><dd className="text-gray-400">Durable project knowledge: conventions, constraints, context. Persist across sessions.</dd></div>
-                  <div><dt className="font-semibold text-white">Skills</dt><dd className="text-gray-400">Reusable workflows and procedures. Team-wide or project-scoped. Agents publish and consume them.</dd></div>
-                  <div><dt className="font-semibold text-white">Milestones</dt><dd className="text-gray-400">Delivery phases grouping tasks. Progress auto-computed from task status.</dd></div>
-                </dl>
+              <div className="grid gap-8 lg:grid-cols-2">
+                <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8 shadow-xl">
+                  <h3 className="mb-6 font-mono text-sm font-bold uppercase tracking-widest text-[#B09E80] opacity-60">Core Rules</h3>
+                  <ul className="space-y-4 text-[#D4C5B0] opacity-70 font-sans">
+                    <li className="flex gap-3"><span>•</span> <span>Always start with a full session context load.</span></li>
+                    <li className="flex gap-3"><span>•</span> <span>Check existing skills before starting unfamiliar work.</span></li>
+                    <li className="flex gap-3"><span>•</span> <span>Record decisions as tradeoffs (include rationale).</span></li>
+                    <li className="flex gap-3"><span>•</span> <span>Update task status proactively as you work.</span></li>
+                    <li className="flex gap-3"><span>•</span> <span>Read task history if you are picking up in-flight work.</span></li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8 shadow-xl">
+                   <h3 className="mb-6 font-mono text-sm font-bold uppercase tracking-widest text-[#B09E80] opacity-60">Knowledge Strategy</h3>
+                   <dl className="space-y-5">
+                      <div>
+                        <dt className="text-[#F0E6D2] font-display font-medium mb-1">Facts</dt>
+                        <dd className="text-sm text-[#D4C5B0] opacity-60 font-sans">Durable rules, conventions, and project constraints.</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[#F0E6D2] font-display font-medium mb-1">Decisions</dt>
+                        <dd className="text-sm text-[#D4C5B0] opacity-60 font-sans">Specific architectural or design choices with reasoning.</dd>
+                      </div>
+                      <div>
+                        <dt className="text-[#F0E6D2] font-display font-medium mb-1">Skills</dt>
+                        <dd className="text-sm text-[#D4C5B0] opacity-60 font-sans">Reusable procedures and multi-step workflows for future sessions.</dd>
+                      </div>
+                   </dl>
+                </div>
               </div>
             </div>
           </section>
 
+          {/* ── Gherkin Style ── */}
+          <section id="gherkin-style" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Gherkin-style Prompts</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
+              ProjectBrain uses the Given/When/Then Gherkin structure for all agent prompts to maximize determinism and reliability.
+            </p>
+            
+            <div className="mt-12 grid gap-8 md:grid-cols-3">
+              {[
+                { title: "Given", desc: "Establishes the persona, state, and available tools before action." },
+                { title: "When", desc: "Defines the exact trigger or condition that causes an action." },
+                { title: "Then", desc: "Specifies the precise outcome, format, and behavior expected." },
+              ].map(item => (
+                <div key={item.title} className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8">
+                   <h3 className="font-mono text-xl font-bold text-[#B09E80] mb-3">{item.title}</h3>
+                   <p className="text-sm text-[#D4C5B0] opacity-60 font-sans leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 rounded-2xl border border-[#B09E80]/20 bg-[#B09E80]/5 p-8 font-sans">
+               <h3 className="font-display text-2xl text-[#F0E6D2] mb-4">Best Practices</h3>
+               <ul className="space-y-4 text-[#D4C5B0] opacity-80">
+                  <li className="flex gap-4">
+                    <span className="text-[#B09E80] shrink-0 font-bold">01.</span>
+                    <span><strong className="text-[#F0E6D2] font-medium">Positive Framing</strong> — Tell the agent what to do instead of what to avoid.</span>
+                  </li>
+                  <li className="flex gap-4">
+                    <span className="text-[#B09E80] shrink-0 font-bold">02.</span>
+                    <span><strong className="text-[#F0E6D2] font-medium">Scenario Isolation</strong> — Use explicit scenarios to handle happy paths vs error branches.</span>
+                  </li>
+                  <li className="flex gap-4">
+                    <span className="text-[#B09E80] shrink-0 font-bold">03.</span>
+                    <span><strong className="text-[#F0E6D2] font-medium">Deterministic Outcomes</strong> — Be highly specific about the structure and tone of the response.</span>
+                  </li>
+               </ul>
+            </div>
+          </section>
+
           {/* ── Memory Curation ── */}
-          <section id="curation" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">Memory Curation</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
-            </p>
-            <p className="mt-4 text-gray-400">
-              ProjectBrain includes an automated curator that periodically reviews your knowledge base for
-              quality issues and semantic duplicates, then surfaces recommendations in the UI.
+          <section id="curation" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Memory Curation</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
+              An automated curator periodically reviews your knowledge base for duplicates and quality issues, surfacing suggestions in the UI.
             </p>
 
-            <div className="mt-8 space-y-6">
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">How it works</h3>
-                <ol className="space-y-3 text-sm text-gray-400">
-                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">1.</span><span>The curator runs on a schedule for projects with curation enabled.</span></li>
-                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">2.</span><span>A rule-based pass always runs — catches stale knowledge (not reviewed within your staleness threshold) and structurally poor entries.</span></li>
-                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">3.</span><span>An LLM pass runs when knowledge has changed since the last run — detects semantic duplicates and quality issues that rules can&apos;t catch.</span></li>
-                  <li className="flex gap-3"><span className="shrink-0 font-mono text-gray-600">4.</span><span>Recommendations appear in the <strong className="text-gray-300">Memory Health</strong> tab inside each project.</span></li>
-                </ol>
-              </div>
-
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Recommendation types</h3>
-                <dl className="space-y-4 text-sm">
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-white">
-                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-blue-500/20 text-blue-300">MERGE</span>
-                    </dt>
-                    <dd className="mt-1 text-gray-400">Two entries are semantically equivalent. Accepting merges them into one, applying a suggested combined body to the canonical entry and marking the other as superseded.</dd>
-                  </div>
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-white">
-                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-orange-500/20 text-orange-300">ARCHIVE</span>
-                    </dt>
-                    <dd className="mt-1 text-gray-400">An entry is stale or no longer relevant. Accepting marks it as superseded.</dd>
-                  </div>
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-white">
-                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-teal-500/20 text-teal-300">REFRESH</span>
-                    </dt>
-                    <dd className="mt-1 text-gray-400">An entry hasn&apos;t been reviewed in a while. Accepting stamps <code className="text-gray-300">last_reviewed_at</code>, signalling it&apos;s still current.</dd>
-                  </div>
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-white">
-                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-yellow-500/20 text-yellow-300">FLAG</span>
-                    </dt>
-                    <dd className="mt-1 text-gray-400">An entry has a quality issue (vague title, missing rationale, empty body). Three resolution options: <strong className="text-gray-300">Delete</strong> (remove the entry), <strong className="text-gray-300">Edit</strong> (rewrite inline), or <strong className="text-gray-300">Keep</strong> (dismiss without changes).</dd>
-                  </div>
-                  <div>
-                    <dt className="flex items-center gap-2 font-semibold text-white">
-                      <span className="rounded px-1.5 py-0.5 text-xs font-bold bg-purple-500/20 text-purple-300">SUPERSEDE</span>
-                    </dt>
-                    <dd className="mt-1 text-gray-400">One entry replaces another. Accepting links the older entry&apos;s <code className="text-gray-300">superseded_by_id</code> to the newer one.</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Configuration</h3>
-                <p className="mb-3 text-sm text-gray-400">Curation is configured per project under <strong className="text-gray-300">Project → Settings</strong>:</p>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">curation_enabled</dt><dd className="text-gray-400">Toggle the curator on/off for this project.</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">staleness_days</dt><dd className="text-gray-400">Days before an unreviewed entry is flagged for refresh (default: 90).</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">confidence_floor</dt><dd className="text-gray-400">Minimum confidence % for a recommendation to surface (default: 75%).</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">entity_types</dt><dd className="text-gray-400">Which entity types to review: fact, decision, skill (default: all).</dd></div>
-                </dl>
-              </div>
-
-              <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-                <h3 className="mb-4 font-mono text-sm font-semibold text-accent-light">Knowledge quality fields</h3>
-                <p className="mb-3 text-sm text-gray-400">
-                  Facts, decisions, and skills carry quality metadata that the curator reads and writes:
-                </p>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">confidence</dt><dd className="text-gray-400">Agent-assigned confidence in this entry (0.0–1.0). Low confidence entries are prioritised for review.</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">freshness_window_days</dt><dd className="text-gray-400">Override the project staleness threshold for this specific entry.</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">last_reviewed_at</dt><dd className="text-gray-400">Timestamp of the last review. Accepting a REFRESH recommendation stamps this.</dd></div>
-                  <div className="flex gap-3"><dt className="w-48 shrink-0 font-mono text-gray-300">superseded_by_id</dt><dd className="text-gray-400">UUID of the entry that replaced this one. Superseded entries are shown with a strikethrough in the UI.</dd></div>
-                </dl>
+            <div className="mt-12 space-y-8">
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8 shadow-xl">
+                <h3 className="mb-6 font-mono text-sm font-bold uppercase tracking-widest text-[#B09E80] opacity-60">Recommendation Types</h3>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                   {[
+                     { label: "MERGE", color: "bg-blue-500/20 text-blue-300", desc: "Combines semantically equivalent entries into one canonical record." },
+                     { label: "ARCHIVE", color: "bg-orange-500/20 text-orange-300", desc: "Removes stale or irrelevant knowledge that is no longer useful." },
+                     { label: "REFRESH", color: "bg-teal-500/20 text-teal-300", desc: "Confirms an entry is still current to prevent staleness warnings." },
+                     { label: "FLAG", color: "bg-yellow-500/20 text-yellow-300", desc: "Identifies quality issues like vague titles or missing rationale." },
+                     { label: "SUPERSEDE", color: "bg-purple-500/20 text-purple-300", desc: "Links an old entry to a newer, more relevant replacement." },
+                   ].map(type => (
+                     <div key={type.label} className="flex flex-col gap-3">
+                        <span className={`w-fit rounded px-2 py-0.5 text-xs font-bold font-mono tracking-widest ${type.color}`}>{type.label}</span>
+                        <p className="text-sm text-[#D4C5B0] opacity-60 font-sans leading-relaxed">{type.desc}</p>
+                     </div>
+                   ))}
+                </div>
               </div>
             </div>
           </section>
 
           {/* ── System Prompt ── */}
-          <section id="system-prompt" className="mb-16">
-            <h1 className="font-mono text-3xl font-bold text-white">System Prompt</h1>
-            <p className="mt-2 text-sm">
-              <a href={EDIT_THIS_PAGE_URL} className="text-accent-light hover:underline">Edit this page on GitHub</a>
+          <section id="system-prompt" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">System Prompt</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
+              Copy this into your agent&apos;s system prompt or rules file. It gives the agent full context on how to use ProjectBrain.
             </p>
-            <p className="mt-4 text-gray-400">
-              Copy this into your agent&apos;s system prompt or rules file. It gives the agent full context on
-              how to use ProjectBrain — entities, tools, workflow, and conventions.
-            </p>
-            <div className="mt-8">
+            <div className="mt-12">
               <Code copyable wrap>{SYSTEM_PROMPT}</Code>
             </div>
           </section>
@@ -785,19 +667,26 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800/50 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 text-sm text-gray-500 sm:flex-row sm:justify-between">
-          <span className="flex items-center gap-2 font-mono">
-            <img src="/favicon.svg" alt="ProjectBrain" className="h-5 w-5" />
-            ProjectBrain Docs
-          </span>
-          <div className="flex gap-6">
-            <a href={EDIT_THIS_PAGE_URL} className="hover:text-gray-300">Edit this page</a>
-            <a href={CONTRIBUTING_URL} className="hover:text-gray-300">Contributing</a>
-            <a href={BLOG_URL} className="hover:text-gray-300">Blog</a>
-            <a href={MARKETING_URL} className="hover:text-gray-300">Home</a>
-            <a href={APP_URL} className="hover:text-gray-300">App</a>
+      <footer className="border-t border-[#2A2722] py-16 bg-[#0A0A0B]">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-center gap-2 sm:items-start">
+            <span className="flex items-center gap-3 font-display text-xl font-medium text-[#F0E6D2]">
+              <img src="/favicon.svg" alt="ProjectBrain" className="h-7 w-7 filter sepia-[0.5] saturate-50" />
+              ProjectBrain Docs
+            </span>
+            <p className="text-[#D4C5B0] opacity-30 text-sm font-sans">
+              Documentation for the shared context era.
+            </p>
           </div>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 font-sans text-sm text-[#D4C5B0]">
+            <a href={MARKETING_URL} className="opacity-50 hover:opacity-100 transition-opacity">Home</a>
+            <a href={BLOG_URL} className="opacity-50 hover:opacity-100 transition-opacity">Blog</a>
+            <a href={APP_URL} className="opacity-50 hover:opacity-100 transition-opacity">App</a>
+            <a href={EDIT_THIS_PAGE_URL} className="opacity-50 hover:opacity-100 transition-opacity">GitHub</a>
+          </div>
+        </div>
+        <div className="mx-auto max-w-7xl px-6 mt-12 pt-8 border-t border-[#2A2722]/30 text-center sm:text-left text-xs font-sans text-[#D4C5B0] opacity-20">
+           &copy; {new Date().getFullYear()} ProjectBrain. All rights reserved.
         </div>
       </footer>
     </div>
