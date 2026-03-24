@@ -9,6 +9,7 @@ const CONTRIBUTING_URL = `${DOCS_REPO_URL}/blob/main/CONTRIBUTING.md`;
 
 const SECTIONS = [
   { id: "getting-started", label: "Getting Started" },
+  { id: "cli", label: "CLI (pb)" },
   { id: "claude-code-skill", label: "Claude Code Skill" },
   { id: "tools", label: "MCP Tools Reference" },
   { id: "workflow", label: "Agent Workflow" },
@@ -398,6 +399,80 @@ export default function App() {
                   Your agent now has persistent project memory. It should call{" "}
                   <code className="text-[#B09E80] bg-[#B09E80]/10 px-1.5 py-0.5 rounded font-mono">context(action=&quot;session&quot;, project_id=...)</code> at the start of every session to orient itself.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* ── CLI ── */}
+          <section id="cli" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">CLI (pb)</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
+              The <code className="text-[#B09E80] bg-[#B09E80]/10 px-1.5 py-0.5 rounded font-mono">pb</code> CLI lets you manage tasks, knowledge, and agents from the terminal — and run the collaborator loop that dispatches work to AI agents.
+            </p>
+
+            <div className="mt-12 space-y-12">
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">1. Install</h3>
+                <p className="mt-3 mb-5 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  Requires Python 3.11+.
+                </p>
+                <Code copyable>pip install project-brain</Code>
+              </div>
+
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">2. Log in</h3>
+                <p className="mt-3 mb-5 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  Authenticate with Google or GitHub (opens a browser), or paste an API key directly.
+                </p>
+                <div className="space-y-3">
+                  <Code copyable>pb login --google</Code>
+                  <Code copyable>pb login --github</Code>
+                  <Code copyable>pb login --token pb_YOUR_API_KEY</Code>
+                </div>
+              </div>
+
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">3. Browse tasks</h3>
+                <p className="mt-3 mb-5 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  List and inspect tasks across your project.
+                </p>
+                <div className="space-y-3">
+                  <Code copyable>pb tasks list --project &lt;project-id&gt;</Code>
+                  <Code copyable>pb tasks get &lt;task-id&gt;</Code>
+                </div>
+              </div>
+
+              <div className="group border-l border-[#2A2722] pl-8 py-2 hover:border-[#B09E80] transition-colors">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2]">4. Run an agent</h3>
+                <p className="mt-3 mb-5 text-[#D4C5B0] opacity-70 leading-relaxed font-sans">
+                  Start the collaborator loop — the runner polls for queued tasks and dispatches them to the chosen agent. GitHub mode (Docker + PR workflow) is enabled automatically when the project has GitHub configured.
+                </p>
+                <Code copyable>pb run --project &lt;project-id&gt; --agent &lt;name&gt;</Code>
+                <p className="mt-4 text-[#D4C5B0] opacity-50 text-sm font-sans italic">
+                  Omit <code className="text-[#B09E80]">--agent</code> to pick from an interactive list.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] p-8 shadow-xl">
+                <h3 className="font-display text-2xl font-medium text-[#F0E6D2] mb-6">All commands</h3>
+                <div className="space-y-3">
+                  {[
+                    ["pb login", "Authenticate (Google, GitHub, or API key)"],
+                    ["pb whoami", "Show the currently authenticated user"],
+                    ["pb projects list", "List all projects"],
+                    ["pb tasks list", "List tasks in a project"],
+                    ["pb tasks get <id>", "Show a single task"],
+                    ["pb tasks create", "Create a new task"],
+                    ["pb knowledge list", "List knowledge entries"],
+                    ["pb knowledge get <id>", "Show a knowledge entry"],
+                    ["pb run", "Start the agent collaborator loop"],
+                  ].map(([cmd, desc]) => (
+                    <div key={cmd as string} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6 rounded-xl border border-[#2A2722] bg-[#0A0A0B] px-5 py-3">
+                      <code className="font-mono text-sm text-[#B09E80] shrink-0">{cmd}</code>
+                      <span className="text-[#D4C5B0] opacity-60 text-sm font-sans">{desc}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
