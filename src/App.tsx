@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const APP_URL = "https://app.projectbrain.tools";
 const MARKETING_URL = "https://projectbrain.tools";
@@ -270,6 +270,18 @@ export default function App() {
   const [active, setActive] = useState<string>("getting-started");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [expandedToolParams, setExpandedToolParams] = useState<Record<string, boolean>>({});
+
+  // Scroll to hash on initial load (e.g. links from the app checklist)
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      setActive(hash);
+      // Small delay to ensure the DOM is fully rendered before scrolling
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, []);
 
   const scrollTo = (id: string) => {
     setActive(id);
