@@ -1237,6 +1237,59 @@ export default function App() {
                 </li>
               </ul>
             </div>
+
+            <div className="mt-12 space-y-6">
+              <h3 className="font-display text-2xl text-[#F0E6D2]">
+                Examples
+              </h3>
+
+              {/* Implementer */}
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#2A2722] flex items-center gap-3">
+                  <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#B09E80] opacity-60">
+                    Role
+                  </span>
+                  <span className="font-display text-lg text-[#F0E6D2]">
+                    Implementer
+                  </span>
+                </div>
+                <pre className="p-8 text-sm font-mono text-[#D4C5B0] opacity-80 leading-relaxed whitespace-pre-wrap overflow-x-auto">{`Given I am a senior software engineer with access to the codebase,
+  the project knowledge base loaded via ProjectBrain context,
+  and write access to files and tests,
+
+When I receive a task describing a new feature or bug fix,
+
+Then I will:
+  1. Load relevant context from ProjectBrain before writing any code
+  2. Implement the change with minimal scope — no unrequested refactors
+  3. Write or update tests to cover the new behavior
+  4. Log the decision and any non-obvious trade-offs to ProjectBrain
+  5. Mark the task complete with a concise summary`}</pre>
+              </div>
+
+              {/* Code Reviewer */}
+              <div className="rounded-2xl border border-[#2A2722] bg-[#141311] overflow-hidden">
+                <div className="px-8 py-5 border-b border-[#2A2722] flex items-center gap-3">
+                  <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#B09E80] opacity-60">
+                    Role
+                  </span>
+                  <span className="font-display text-lg text-[#F0E6D2]">
+                    Code Reviewer
+                  </span>
+                </div>
+                <pre className="p-8 text-sm font-mono text-[#D4C5B0] opacity-80 leading-relaxed whitespace-pre-wrap overflow-x-auto">{`Given I am a thorough code reviewer with access to the diff and
+  the project's conventions and decisions stored in ProjectBrain,
+
+When I receive a pull request or changeset to review,
+
+Then I will:
+  1. Check that the change is consistent with logged architectural decisions
+  2. Flag security issues, logic errors, and missing edge-case handling
+  3. Note style or convention violations without being pedantic
+  4. Suggest concrete, actionable improvements — not vague commentary
+  5. Post a structured review summary: Approved / Changes Requested / Blocked`}</pre>
+              </div>
+            </div>
           </section>
 
           {/* ── Tools Reference ── */}
