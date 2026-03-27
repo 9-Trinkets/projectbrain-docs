@@ -9,7 +9,8 @@ const CONTRIBUTING_URL = `${DOCS_REPO_URL}/blob/main/CONTRIBUTING.md`;
 
 const SECTIONS = [
   { id: "getting-started", label: "Getting Started" },
-  { id: "cli", label: "CLI (pb)" },
+  { id: "demo", label: "Demo" },
+  { id: "cli", label: "pb CLI" },
   { id: "claude-code-skill", label: "Claude Code Skill" },
   { id: "tools", label: "MCP Tools Reference" },
   { id: "workflow", label: "Agent Workflow" },
@@ -412,6 +413,75 @@ export default function App() {
                   <code className="text-[#B09E80] bg-[#B09E80]/10 px-1.5 py-0.5 rounded font-mono">context(action=&quot;session&quot;, project_id=...)</code> at the start of every session to orient itself.
                 </p>
               </div>
+            </div>
+          </section>
+
+          {/* ── Demo ── */}
+          <section id="demo" className="mb-24">
+            <h1 className="font-display text-4xl font-medium text-[#F0E6D2] md:text-5xl tracking-tight">Demo</h1>
+            <p className="mt-4 text-lg text-[#D4C5B0] opacity-70 leading-relaxed font-sans max-w-2xl">
+              End-to-end walkthrough: create an agent, wire up a project, assign a workflow stage, create a task, and watch the agent implement it and open a pull request — all autonomously.
+            </p>
+
+            <div className="mt-10 overflow-hidden rounded-2xl border border-[#2A2722] bg-[#0A0A0B] shadow-2xl">
+              <video
+                src="/demo.mp4"
+                controls
+                playsInline
+                className="w-full"
+              />
+            </div>
+
+            <div className="mt-14 space-y-10">
+              <h2 className="font-display text-2xl font-medium text-[#F0E6D2]">What&apos;s happening in the video</h2>
+
+              {[
+                {
+                  step: "1",
+                  title: "Create an agent",
+                  body: "Open the Team page and click Add Agent. Enter a name, choose the Claude Code adapter, and paste your Anthropic API key. After the agent is created, open its Edit Card, expand the Advanced section, and save a GitHub personal access token so the agent can open pull requests.",
+                },
+                {
+                  step: "2",
+                  title: "Create a project",
+                  body: "Navigate to Projects and click New Project. Type a project name and confirm. ProjectBrain creates an isolated workspace — its own task board, knowledge base, workflow stages, and team roster.",
+                },
+                {
+                  step: "3",
+                  title: "Connect a GitHub repository",
+                  body: "Open the project, go to Manage → Settings, select the GitHub repository from the dropdown, and click Save Settings. The agent will push branches and open PRs against this repo.",
+                },
+                {
+                  step: "4",
+                  title: "Assign the agent to a workflow stage",
+                  body: "Switch to the Workflow tab. Click the In Progress stage to open its configuration panel, assign the agent as the Implementer, and save. The runner now knows which agent to dispatch when a task enters this stage.",
+                },
+                {
+                  step: "5",
+                  title: "Create a task",
+                  body: "Go to the Tasks tab, click New Task, enter a title, and create it. The task is immediately moved to In Progress so the runner can pick it up.",
+                },
+                {
+                  step: "6",
+                  title: "Agent runs autonomously (4× speed)",
+                  body: "The terminal shows pb supervise starting the collaborator loop. The agent picks up the task, reads the project context via MCP, writes code, commits it to a new branch, and updates the task status as it works. The browser view shows the task moving through the board in real time.",
+                },
+                {
+                  step: "7",
+                  title: "Pull request opened on GitHub",
+                  body: "Once the agent finishes, the video navigates to the pull request it opened. The diff view shows the implementation — written, committed, and submitted entirely by the agent without any human intervention.",
+                },
+              ].map(({ step, title, body }) => (
+                <div key={step} className="flex gap-6">
+                  <div className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full border border-[#2A2722] bg-[#141311] font-mono text-sm font-semibold text-[#B09E80]">
+                    {step}
+                  </div>
+                  <div className="pt-1">
+                    <h3 className="font-display text-xl font-medium text-[#F0E6D2]">{title}</h3>
+                    <p className="mt-2 leading-relaxed text-[#D4C5B0] opacity-70 font-sans">{body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
