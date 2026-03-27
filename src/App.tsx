@@ -425,7 +425,7 @@ export default function App() {
 
             <div className="mt-10 overflow-hidden rounded-2xl border border-[#2A2722] bg-[#0A0A0B] shadow-2xl">
               <video
-                src="/demo.mp4"
+                src="https://cugvsb78xcdtc4qa.public.blob.vercel-storage.com/final.mp4"
                 controls
                 playsInline
                 className="w-full"
